@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OT Hub 개발노트 템플릿</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#1A2B4C; --teal:#2DD4BF; --teal-d:#1A8A7A;
+  --dev-dark:#0F2027; --dev-accent:#00D4AA;
+  --bg:#F8FAFC; --border:rgba(26,43,76,.09); --gray:#6B7280;
+  --body:'DM Sans',sans-serif; --display:'DM Serif Display',serif;
+}
+body{font-family:var(--body);background:#111;color:#fff;-webkit-font-smoothing:antialiased;min-height:100vh;}
+
+/* ── 에디터 레이아웃 ── */
+.editor-wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;}
+@media(max-width:900px){.editor-wrap{grid-template-columns:1fr;}}
+
+/* ── 좌측: 입력 폼 ── */
+.editor-panel{background:#1A1A2E;padding:28px 24px;overflow-y:auto;border-right:1px solid rgba(255,255,255,.08);}
+.editor-title{font-family:var(--display);font-size:22px;color:#fff;margin-bottom:4px;}
+.editor-sub{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:28px;}
+
+.form-section{margin-bottom:24px;}
+.form-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px;display:block;}
+.form-input,.form-textarea,.form-select{
+  width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:10px 14px;font-size:14px;color:#fff;font-family:var(--body);
+  outline:none;transition:border-color .2s;
+}
+.form-input:focus,.form-textarea:focus{border-color:var(--dev-accent);}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.6;}
+.form-hint{font-size:11px;color:rgba(255,255,255,.3);margin-top:5px;}
+
+.slide-block{background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:12px;position:relative;}
+.slide-num{font-size:11px;font-weight:700;color:var(--dev-accent);margin-bottom:10px;letter-spacing:.05em;}
+.slide-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.remove-btn{position:absolute;top:12px;right:12px;background:rgba(255,59,48,.15);border:none;color:#FF3B30;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+
+.add-slide-btn{width:100%;padding:11px;border-radius:12px;border:1.5px dashed rgba(0,212,170,.3);background:rgba(0,212,170,.05);color:var(--dev-accent);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--body);transition:all .2s;}
+.add-slide-btn:hover{background:rgba(0,212,170,.1);border-color:var(--dev-accent);}
+
+.action-bar{display:flex;gap:10px;margin-top:24px;}
+.btn-preview{flex:1;padding:13px;border-radius:12px;border:none;background:rgba(0,212,170,.15);color:var(--dev-accent);font-size:14px;font-weight:700;cursor:pointer;font-family:var(--body);transition:all .2s;}
+.btn-preview:hover{background:rgba(0,212,170,.25);}
+.btn-copy{flex:1;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#0F2027,#00D4AA);color:#0F2027;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--body);transition:all .2s;}
+.btn-copy:hover{opacity:.9;transform:scale(1.02);}
+
+/* ── 우측: 미리보기 ── */
+.preview-panel{background:#0F0F0F;display:flex;flex-direction:column;overflow:hidden;}
+.preview-header{padding:16px 20px;background:rgba(0,0,0,.5);border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;}
+.preview-label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+.slide-counter{font-size:12px;color:rgba(255,255,255,.4);}
+.preview-body{flex:1;overflow-y:auto;position:relative;}
+
+/* 슬라이드 카드 미리보기 */
+.slide-preview{
+  min-height:100vmin;max-width:480px;margin:0 auto;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 28px;text-align:center;position:relative;
+  background:linear-gradient(160deg,#0F2027 0%,#0F2027cc 100%);
+}
+.sp-num{position:absolute;top:16px;right:20px;font-size:11px;color:rgba(255,255,255,.4);}
+.sp-icon{font-size:52px;margin-bottom:18px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.4));}
+.sp-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.05em;background:rgba(0,212,170,.15);color:#00D4AA;border:1px solid rgba(0,212,170,.3);margin-bottom:14px;}
+.sp-title{font-size:20px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:12px;}
+.sp-divider{width:36px;height:3px;border-radius:2px;background:#00D4AA;margin:0 auto 14px;}
+.sp-body{font-size:14px;line-height:1.8;color:rgba(255,255,255,.75);}
+.sp-separator{height:1px;background:rgba(255,255,255,.06);margin:0 20px;}
+.sp-instagram{position:absolute;bottom:16px;left:20px;display:flex;align-items:center;gap:6px;}
+.sp-insta-ico{width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;}
+.sp-insta-handle{font-size:11px;color:rgba(255,255,255,.4);}
+
+/* 도트 네비 */
+.preview-dots{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;background:rgba(0,0,0,.5);}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:all .2s;}
+.dot.on{width:20px;border-radius:4px;background:#00D4AA;}
+
+/* ── 코드 출력 ── */
+.code-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;align-items:center;justify-content:center;padding:20px;}
+.code-modal.open{display:flex;}
+.code-box{background:#1A1A2E;border-radius:18px;padding:24px;max-width:680px;width:100%;max-height:80vh;overflow-y:auto;border:1px solid rgba(0,212,170,.2);}
+.code-box-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;}
+.code-box-sub{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:16px;}
+.code-output{background:#0F0F0F;border-radius:12px;padding:16px;font-size:12px;font-family:'Courier New',monospace;color:#00D4AA;white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:320px;overflow-y:auto;}
+.code-actions{display:flex;gap:10px;margin-top:14px;}
+.code-copy-btn{flex:1;padding:12px;border-radius:10px;border:none;background:var(--dev-accent);color:#0F2027;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--body);}
+.code-close-btn{padding:12px 20px;border-radius:10px;border:1.5px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;font-family:var(--body);}
+
+/* 토스트 */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#00D4AA;color:#0F2027;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;opacity:0;transition:all .3s;pointer-events:none;z-index:200;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="editor-wrap">
+
+  <!-- ── 좌측: 입력 폼 ──────────────────────────── -->
+  <div class="editor-panel">
+    <div class="editor-title">💻 개발노트 업로드</div>
+    <div class="editor-sub">작업치료사의 자급자족 개발노트 · @starlight_daddy</div>
+
+    <!-- 기본 정보 -->
+    <div class="form-section">
+      <label class="form-label">에피소드 번호</label>
+      <input class="form-input" type="number" id="epNum" value="3" min="1" oninput="renderPreview()"/>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">제목 (카드 대표 제목)</label>
+      <input class="form-input" type="text" id="mainTitle" placeholder="예: OT Hub 게임 탭을 만들었다" oninput="renderPreview()"/>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label">태그 (쉼표로 구분)</label>
+      <input class="form-input" type="text" id="tags" placeholder="예: OT Hub, 바이브코딩, Next.js" oninput="renderPreview()"/>
+      <p class="form-hint">카드 검색 및 분류에 사용됩니다</p>
+    </div>
+
+    <!-- 슬라이드 -->
+    <div class="form-section">
+      <label class="form-label">슬라이드 구성 <span style="color:rgba(255,255,255,.3);font-weight:400;text-transform:none;letter-spacing:0;">(최대 8장)</span></label>
+      <div id="slideList"></div>
+      <button class="add-slide-btn" onclick="addSlide()">+ 슬라이드 추가</button>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn-preview" onclick="renderPreview()">🔄 미리보기 갱신</button>
+      <button class="btn-copy" onclick="generateCode()">📋 코드 복사</button>
+    </div>
+  </div>
+
+  <!-- ── 우측: 미리보기 ─────────────────────────── -->
+  <div class="preview-panel">
+    <div class="preview-header">
+      <span class="preview-label">미리보기</span>
+      <span class="slide-counter" id="slideCounter">0 / 0 슬라이드</span>
+    </div>
+    <div class="preview-body" id="previewBody"></div>
+    <div class="preview-dots" id="previewDots"></div>
+  </div>
+</div>
+
+<!-- 코드 출력 모달 -->
+<div class="code-modal" id="codeModal">
+  <div class="code-box">
+    <div class="code-box-title">📋 생성된 코드</div>
+    <div class="code-box-sub">아래 코드를 OT Hub ot-hub-preview.html 의 NEWS 배열에 추가하세요</div>
+    <div class="code-output" id="codeOutput"></div>
+    <div class="code-actions">
+      <button class="code-copy-btn" onclick="copyCode()">클립보드에 복사</button>
+      <button class="code-close-btn" onclick="closeCode()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 슬라이드 데이터 ────────────────────────────────
+let slides = [
+  { icon:'💻', tag:'개발노트 EP.?', title:'', body:'' },
+  { icon:'💡', tag:'시작', title:'', body:'' },
+  { icon:'⚙️', tag:'방법', title:'', body:'' },
+  { icon:'🚀', tag:'결과', title:'', body:'' },
+];
+
+const ICONS = ['💻','💡','⚙️','🚀','🤖','🎮','📱','🔧','✨','🧩','📊','🔗','🌱','🎯','🛠️','📝'];
+
+// ── 슬라이드 폼 렌더 ──────────────────────────────
+function renderSlideList(){
+  const container = document.getElementById('slideList');
+  container.innerHTML = slides.map((s,i) => `
+    <div class="slide-block">
+      <div class="slide-num">SLIDE ${i+1}</div>
+      ${slides.length > 1 ? `<button class="remove-btn" onclick="removeSlide(${i})">✕</button>` : ''}
+      <div class="slide-row">
+        <div>
+          <label class="form-label">아이콘</label>
+          <select class="form-select" onchange="updateSlide(${i},'icon',this.value)">
+            ${ICONS.map(ic=>`<option value="${ic}" ${s.icon===ic?'selected':''}>${ic}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">태그 라벨</label>
+          <input class="form-input" type="text" value="${s.tag}" placeholder="예: 시작" oninput="updateSlide(${i},'tag',this.value)"/>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="form-label">슬라이드 제목</label>
+        <input class="form-input" type="text" value="${s.title}" placeholder="예: Claude로 만든 평가도구" oninput="updateSlide(${i},'title',this.value)"/>
+      </div>
+      <div>
+        <label class="form-label">본문 내용</label>
+        <textarea class="form-textarea" placeholder="내용을 입력하세요.&#10;줄바꿈은 엔터로 입력하면 자동 반영됩니다." oninput="updateSlide(${i},'body',this.value)">${s.body}</textarea>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateSlide(i, key, val){
+  slides[i][key] = val;
+  renderPreview();
+}
+
+function addSlide(){
+  if(slides.length >= 8){ showToast('슬라이드는 최대 8장까지 가능해요'); return; }
+  slides.push({ icon:'✨', tag:'내용', title:'', body:'' });
+  renderSlideList();
+  renderPreview();
+}
+
+function removeSlide(i){
+  slides.splice(i,1);
+  renderSlideList();
+  renderPreview();
+}
+
+// ── 미리보기 렌더 ─────────────────────────────────
+function renderPreview(){
+  const ep = document.getElementById('epNum').value || '?';
+  const title = document.getElementById('mainTitle').value || '제목을 입력하세요';
+
+  // 첫 슬라이드 태그에 ep 자동 반영
+  if(slides[0]) slides[0].tag = `개발노트 EP.${ep}`;
+  renderSlideList();
+
+  const body = document.getElementById('previewBody');
+  const dots = document.getElementById('previewDots');
+  const counter = document.getElementById('slideCounter');
+
+  counter.textContent = `${slides.length} 슬라이드`;
+
+  body.innerHTML = slides.map((s,i) => `
+    <div class="slide-preview" id="sp${i}">
+      <span class="sp-num">${i+1} / ${slides.length}</span>
+      <div class="sp-icon">${s.icon}</div>
+      <span class="sp-tag">${s.tag||'태그'}</span>
+      <div class="sp-title">${s.title||'제목을 입력하세요'}</div>
+      <div class="sp-divider"></div>
+      <div class="sp-body">${(s.body||'내용을 입력하세요').replace(/\n/g,'<br>')}</div>
+      <div class="sp-instagram">
+        <div class="sp-insta-ico">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#fff" stroke="none"/></svg>
+        </div>
+        <span class="sp-insta-handle">@starlight_daddy</span>
+      </div>
+    </div>
+    ${i < slides.length-1 ? '<div class="sp-separator"></div>' : ''}
+  `).join('');
+
+  dots.innerHTML = slides.map((_,i) =>
+    `<div class="dot${i===0?' on':''}" onclick="scrollToSlide(${i})"></div>`
+  ).join('');
+
+  // 스크롤 동기화
+  body.onscroll = () => {
+    const idx = Math.round(body.scrollTop / body.clientHeight);
+    document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===idx));
+  };
+}
+
+function scrollToSlide(i){
+  const el = document.getElementById('sp'+i);
+  if(el) el.scrollIntoView({behavior:'smooth'});
+}
+
+// ── 코드 생성 ─────────────────────────────────────
+function generateCode(){
+  const ep = parseInt(document.getElementById('epNum').value)||1;
+  const title = document.getElementById('mainTitle').value||'제목 없음';
+  const rawTags = document.getElementById('tags').value;
+  const tags = rawTags ? rawTags.split(',').map(t=>`'${t.trim()}'`).join(',') : "'개발노트'";
+
+  const slidesCode = slides.map(s => {
+    const body = s.body.replace(/\n/g,'\\n').replace(/'/g,"\\'");
+    const stitle = (s.title||'').replace(/'/g,"\\'");
+    const stag = (s.tag||'').replace(/'/g,"\\'");
+    return `      { icon:'${s.icon}', tag:'${stag}', title:'${stitle}', body:'${body}' }`;
+  }).join(',\n');
+
+  // 다음 id 자동 계산
+  const newId = `dev${ep}`;
+
+  const code = `  /* 금 — 자급자족 개발노트 EP.${ep} */
+  { id:'${newId}', type:'card_news', series:'dev', ep:${ep},
+    title:'${title.replace(/'/g,"\\'")}',
+    ch:'OT Hub | 함형광', views:'0', tags:[${tags}],
+    cc:'#0F2027', chUrl:'https://youtube.com/@ohtip-w4d',
+    slides:[
+${slidesCode},
+    ]
+  },`;
+
+  document.getElementById('codeOutput').textContent = code;
+  document.getElementById('codeModal').classList.add('open');
+}
+
+function copyCode(){
+  const text = document.getElementById('codeOutput').textContent;
+  navigator.clipboard.writeText(text).then(()=>showToast('✓ 클립보드에 복사됐어요!'));
+}
+
+function closeCode(){
+  document.getElementById('codeModal').classList.remove('open');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ── 초기화 ────────────────────────────────────────
+renderSlideList();
+renderPreview();
+</script>
+</body>
+</html>
