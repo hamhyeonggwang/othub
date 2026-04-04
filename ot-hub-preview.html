@@ -998,6 +998,9 @@ const WEBAPPS=[
   {id:'w2',type:'game',title:'Link IT – 디지털 인지재활',ch:'purme.vercel.app',img:'https://picsum.photos/seed/wa2/640/360',tags:['인지재활','AI'],cc:'#7C3AED',url:'https://purme.vercel.app'},
   {id:'w3',type:'game',title:'ICF Mapper',ch:'OT Hub Tools',img:'https://picsum.photos/seed/wa3/640/360',tags:['ICF','AI','분류'],cc:'#1A2B4C',url:'https://chatgpt.com/g/g-6853a3c55f448191aadefb87182c708f-r-oti-lab-icf-geomsaeg-caesbos'},
   {id:'w4',type:'game',title:'KSOTCS 학회 사이트',ch:'ksotcs.vercel.app',img:'https://picsum.photos/seed/wa4/640/360',tags:['학회','Web'],cc:'#0284C7',url:'https://ksotcs.vercel.app'},
+  {id:'w5',type:'game',title:'빽다방 키오스크 훈련',ch:'OT Hub',img:'https://picsum.photos/seed/kiosk-paik/640/360',tags:['키오스크','주문·ADL'],cc:'#5C4033',url:'paik-kiosk-trainer.html'},
+  {id:'w6',type:'game',title:'문구야놀자 키오스크 훈련',ch:'OT Hub',img:'https://picsum.photos/seed/kiosk-munggu/640/360',tags:['키오스크','주문·ADL'],cc:'#E85D04',url:'munggu-kiosk-trainer.html'},
+  {id:'w7',type:'game',title:'CU 편의점 키오스크 훈련',ch:'OT Hub',img:'https://picsum.photos/seed/kiosk-cu/640/360',tags:['키오스크','주문·ADL'],cc:'#6D28D9',url:'cu-kiosk-trainer.html'},
 ];
 
 const BOOKS=[
@@ -1262,6 +1265,9 @@ function homeHTML(){return`
   <div class="divider"></div>
   <div class="sec-hd"><span class="sec-t">🛠️ 임상 웹앱</span><button class="sec-more" onclick="goTabId('webapps')">전체 보기</button></div>
   <div class="g2" style="margin-bottom:0;">${WEBAPPS.slice(0,2).map(w=>vcHTML(w)).join('')}</div>
+  <div class="divider"></div>
+  <div class="sec-hd"><span class="sec-t">🖥️ 키오스크 훈련</span><button class="sec-more" onclick="goTabId('webapps')">전체 보기</button></div>
+  <div class="g2" style="margin-bottom:0;">${WEBAPPS.filter(w=>w.tags&&w.tags.includes('키오스크')).map(w=>vcHTML(w)).join('')}</div>
   <div class="divider"></div>
   <div class="sec-hd"><span class="sec-t">⚙️ 임상 도구</span><button class="sec-more" onclick="selCatById('유용한 정보')">전체 보기</button></div>
   ${TOOLS.slice(0,2).map(t=>tcHTML(t)).join('')}
