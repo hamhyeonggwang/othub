@@ -1097,10 +1097,10 @@ const NEWS=[
   },
 ];
 const TOOLS=[
-  {ico:'🔬',name:'ICF 자동 분류기',desc:'임상 텍스트 → ICF 코드 자동 매핑 (AI)',badge:'AI 탑재',bc:'rgba(45,212,191,.15)',bt:'#1A8A7A'},
-  {ico:'📋',name:'GAS 목표 설정',desc:'Goal Attainment Scaling 웹 폼',badge:'인증 필요',bc:'rgba(26,43,76,.08)',bt:'var(--navy)'},
-  {ico:'📊',name:'MBI / FIM 평가기록',desc:'기능평가 기록 & 시각화 시스템',badge:'인증 필요',bc:'rgba(26,43,76,.08)',bt:'var(--navy)'},
-  {ico:'📄',name:'보고서 자동 생성',desc:'평가 데이터 → PDF 보고서 출력',badge:'인증 필요',bc:'rgba(26,43,76,.08)',bt:'var(--navy)'},
+  {type:'tool',ico:'🔬',name:'ICF 자동 분류기',desc:'임상 텍스트 → ICF 코드 자동 매핑 (AI)',badge:'AI 탑재',bc:'rgba(45,212,191,.15)',bt:'#1A8A7A'},
+  {type:'tool',ico:'📋',name:'GAS 목표 설정',desc:'Goal Attainment Scaling 웹 폼',badge:'인증 필요',bc:'rgba(26,43,76,.08)',bt:'var(--navy)'},
+  {type:'tool',ico:'📊',name:'MBI / FIM 평가기록',desc:'기능평가 기록 & 시각화 시스템',badge:'인증 필요',bc:'rgba(26,43,76,.08)',bt:'var(--navy)'},
+  {type:'tool',ico:'📄',name:'보고서 자동 생성',desc:'평가 데이터 → PDF 보고서 출력',badge:'인증 필요',bc:'rgba(26,43,76,.08)',bt:'var(--navy)'},
 ];
 const DNAV=[
   {t:'home',ico:'🏠',lbl:'홈'},
@@ -1123,7 +1123,7 @@ function buildStrip(){
     return`<div class="l-mini" onclick="showApp()">
       <div class="l-mini-img"><img src="${c.img}" loading="lazy"><div class="l-mini-over"></div>
       <span class="l-mini-badge" style="background:${m.bg};color:${m.tx};">${m.l}</span></div>
-      <div class="l-mini-body"><div class="l-mini-title">${c.title}</div>
+      <div class="l-mini-body"><div class="l-mini-title">${itemTitle(c)}</div>
       <div class="l-mini-sub">${c.ch||c.tag||''}</div></div></div>`;
   }).join('');
 }
@@ -1232,9 +1232,9 @@ function buildFeed(){
   if(tab==='explore')   {feed.innerHTML=exploreHTML();return;}
   if(tab==='videos'){feed.innerHTML=videosHTML();return;}
   if(tab==='info'){feed.innerHTML=infoHTML();return;}
-  if(tab==='community') {feed.innerHTML=lockedHTML('💬','커뮤니티','작업치료사들과 케이스 토론, Q&A, 정보 공유를 해보세요. (준비 중)');return;}
+  if(tab==='community') {feed.innerHTML=lockedHTML('💬','커뮤니티 (준비중)','작업치료사들과 케이스 토론, Q&A, 정보 공유를 해보세요.');return;}
   if(tab==='chatbot')   {openChatbot();return;}
-  if(tab==='bookmark')  {feed.innerHTML=lockedHTML('🔖','북마크','콘텐츠를 저장하고 언제든지 다시 볼 수 있어요.');return;}
+  if(tab==='bookmark')  {feed.innerHTML=lockedHTML('🔖','북마크 (준비중)','콘텐츠를 저장하고 언제든지 다시 볼 수 있어요.');return;}
   if(tab==='profile')   {feed.innerHTML=profileHTML();return;}
   feed.innerHTML=homeHTML();
 }
@@ -1341,6 +1341,20 @@ function profileHTML(){return`
 function lockedHTML(ic,t,d){return`<div class="locked" style="margin-top:8px;"><div class="locked-ico">${ic}</div><div class="locked-t">${t}</div><div class="locked-d">${d}</div></div>`;}
 
 /* ── CARD BUILDERS ─────────────────────────────────── */
+function wipLabel(v){
+  if(!v||typeof v!=='object') return '';
+  if(v.wip===true) return ' (준비중)';
+  if(v.wip===false) return '';
+  if(v.type==='card_news') return '';
+  if((v.type==='video'||v.type==='game') && !v.url) return ' (준비중)';
+  if(v.type==='book' && !v.url) return ' (준비중)';
+  if(v.type==='tool' && !v.url) return ' (준비중)';
+  return '';
+}
+function itemTitle(v){
+  const base=v.title!=null&&v.title!==''?v.title:(v.name!=null?v.name:'');
+  return base+wipLabel(v);
+}
 function featHTML(v,st){
   const m=TM[v.type];
   return`<div class="sec-hd" style="margin-top:4px;"><span class="sec-t">${st}</span></div>
@@ -1353,7 +1367,7 @@ function featHTML(v,st){
     </div>
     <div class="feat-body">
       <div class="feat-ch-row"><div class="ch-av" style="background:${v.cc||'#1A2B4C'};">${(v.ch||'O')[0]}</div>${v.chUrl ? `<span class="ch-name" style="cursor:pointer;" onclick="event.stopPropagation();window.open('${v.chUrl}','_blank')">${v.ch||''}</span>` : `<span class="ch-name">${v.ch||''}</span>`}</div>
-      <div class="feat-title">${v.title}</div>
+      <div class="feat-title">${itemTitle(v)}</div>
       <div class="feat-meta"><span class="f-views">👁 ${v.views||'—'}</span><div class="f-tags">${(v.tags||[]).map(t=>`<span class="mtag">${t}</span>`).join('')}</div></div>
     </div>
   </div>`;}
@@ -1366,7 +1380,7 @@ function vcHTML(v){
     ${v.dur?`<span class="vc-dur">${v.dur}</span>`:''}
     <div class="vc-hplay"><div class="play-sm"><svg width="16" height="16" fill="#0F3D3A" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
   </div>
-  <div class="vc-body"><div class="vc-title">${v.title}</div>
+  <div class="vc-body"><div class="vc-title">${itemTitle(v)}</div>
   <div class="vc-bot">${v.chUrl ? `<span class="vc-ch" style="cursor:pointer;color:var(--teal-d);" onclick="event.stopPropagation();window.open('${v.chUrl}','_blank')">${v.ch||v.tag||''}</span>` : `<span class="vc-ch">${v.ch||v.tag||''}</span>`}<span class="vc-views">👁 ${v.views||'—'}</span></div></div></div>`;}
 
 function gcHTML(g){
@@ -1375,15 +1389,15 @@ function gcHTML(g){
     <div class="gc-grad"></div>
     <div class="gc-play"><div class="play-circle"><svg width="18" height="18" fill="#0F3D3A" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
   </div>
-  <div class="gc-body"><div class="gc-title">${g.title}</div><div class="gc-tag">🎯 ${g.tag}</div></div></div>`;}
+  <div class="gc-body"><div class="gc-title">${itemTitle(g)}</div><div class="gc-tag">🎯 ${g.tag}</div></div></div>`;}
 
 function bcHTML(b){
   return`<div class="bc"><div class="bc-cover"><img src="${b.img}" loading="lazy"></div>
-  <div class="bc-body"><div class="bc-title">${b.title}</div><div class="bc-auth">${b.auth}</div></div></div>`;}
+  <div class="bc-body"><div class="bc-title">${itemTitle(b)}</div><div class="bc-auth">${b.auth}</div></div></div>`;}
 
 function tcHTML(t){
   return`<div class="tc"><div class="tc-ico">${t.ico}</div>
-  <div class="tc-info"><div class="tc-name">${t.name}</div><div class="tc-desc">${t.desc}</div></div>
+  <div class="tc-info"><div class="tc-name">${itemTitle(t)}</div><div class="tc-desc">${t.desc}</div></div>
   <span class="tc-badge" style="background:${t.bc};color:${t.bt};">${t.badge}</span>
   <span class="tc-arr">›</span></div>`;}
 
