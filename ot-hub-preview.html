@@ -65,6 +65,7 @@ img{display:block;max-width:100%;}
 
 /* preview strip */
 .l-strip-wrap{padding:24px 0 0;animation:up .8s .35s ease-out both;}
+.l-strip-wrap--below-hero{padding-top:16px;}
 .strip-label{text-align:center;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(26,43,76,.35);margin-bottom:14px;}
 .l-strip{display:flex;gap:12px;overflow-x:auto;padding:0 20px 20px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 .l-strip::-webkit-scrollbar{display:none;}
@@ -79,8 +80,72 @@ img{display:block;max-width:100%;}
 .l-mini-title{font-size:12px;font-weight:600;color:var(--navy);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .l-mini-sub{font-size:10px;color:var(--gray);margin-top:3px;}
 
+/* 데스크톱: 히어로(좌) + 인기 카드(우) */
+.l-split{display:flex;flex-direction:column;flex:1;min-height:0;}
+.l-split-hero,.l-split-cards{min-width:0;}
+@media (min-width:960px){
+  #landing .l-nav{padding:0 32px;}
+  .l-split{
+    flex-direction:row;
+    align-items:stretch;
+    justify-content:center;
+    gap:clamp(32px,4vw,56px);
+    padding:0 32px 32px;
+    max-width:1200px;
+    margin:0 auto;
+    width:100%;
+    flex:1;
+    min-height:calc(100vh - 60px);
+  }
+  .l-split-hero{
+    flex:1 1 52%;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+  }
+  .l-hero{
+    align-items:flex-start;
+    text-align:left;
+    justify-content:center;
+    padding:32px 0 40px;
+    width:100%;
+    max-width:520px;
+  }
+  .l-badge{align-self:flex-start;}
+  .l-btns{justify-content:flex-start;}
+  .l-title{font-size:clamp(56px,5.5vw,96px);}
+  .l-split-cards{
+    flex:1 1 44%;
+    max-width:440px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .l-strip-wrap{
+    padding:24px 20px 8px;
+    background:rgba(255,255,255,.72);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:0 8px 32px rgba(26,43,76,.06);
+    animation:up .8s .35s ease-out both;
+  }
+  .l-strip-wrap .strip-label{text-align:left;margin-bottom:16px;padding:0;}
+  .l-strip{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    overflow-x:visible;
+    padding:0 0 8px;
+    -webkit-overflow-scrolling:auto;
+  }
+  .l-mini{width:100%;max-width:none;}
+}
+
 /* footer */
 .l-footer{padding:20px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:12px;}
+@media (min-width:960px){
+  .l-footer{padding:24px 32px 28px;max-width:1200px;margin:0 auto;width:100%;}
+}
 .l-foot-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 .l-foot-links{display:flex;gap:16px;flex-wrap:wrap;}
 .l-foot-links a{font-size:12px;color:rgba(26,43,76,.38);text-decoration:none;transition:color .2s;}
@@ -543,18 +608,23 @@ img{display:block;max-width:100%;}
     </div>
   </nav>
 
-  <div class="l-hero">
-    <div class="l-badge"><div class="badge-dot"></div><span class="badge-txt">작업치료사가 만든 · 모두를 위한 플랫폼</span></div>
-    <h1 class="l-title">OT<br><span class="g">Hub</span></h1>
-    <p class="l-tag">By OTs, For Everyone.</p>
-    <div class="l-btns" style="margin-top:28px;">
-      <button class="cta-main" onclick="showApp()">콘텐츠 보러 가기 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/></svg></button>
-
+  <div class="l-split">
+    <div class="l-split-hero">
+      <div class="l-hero">
+        <div class="l-badge"><div class="badge-dot"></div><span class="badge-txt">작업치료사가 만든 · 모두를 위한 플랫폼</span></div>
+        <h1 class="l-title">OT<br><span class="g">Hub</span></h1>
+        <p class="l-tag">By OTs, For Everyone.</p>
+        <div class="l-btns" style="margin-top:28px;">
+          <button class="cta-main" onclick="showApp()">콘텐츠 보러 가기 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/></svg></button>
+        </div>
+      </div>
     </div>
-  </div>
-
-  <div class="l-strip-wrap" style="padding-top:0;">
-    <div class="l-strip" id="lStrip"></div>
+    <aside class="l-split-cards" aria-label="인기 콘텐츠">
+      <div class="l-strip-wrap l-strip-wrap--below-hero">
+        <div class="strip-label">인기 콘텐츠</div>
+        <div class="l-strip" id="lStrip"></div>
+      </div>
+    </aside>
   </div>
 
   <footer class="l-footer">
