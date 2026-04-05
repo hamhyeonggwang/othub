@@ -1162,7 +1162,17 @@ let tab='home', cat='전체';
 /* ── LANDING strip ──────────────────────────────────── */
 function buildStrip(){
   const el=document.getElementById('lStrip');
-  const items=[...GAMES.slice(0,3),...VID.slice(0,2),...NEWS.slice(0,2)];
+  const ok=c=>wipLabel(c)==='';
+  const fromGames=GAMES.filter(ok).slice(0,3);
+  const fromVid=VID.filter(ok).slice(0,2);
+  const fromNews=NEWS.filter(ok).slice(0,2);
+  const items=[...fromGames,...fromVid,...fromNews];
+  if(items.length<7){
+    for(const w of WEBAPPS.filter(ok)){
+      if(items.length>=7) break;
+      if(!items.some(x=>x.id===w.id)) items.push(w);
+    }
+  }
   el.innerHTML=items.map(c=>{
     const m=TM[c.type]||{l:'',bg:'rgba(26,43,76,.7)',tx:'#fff'};
     return`<div class="l-mini" onclick="showApp()">
