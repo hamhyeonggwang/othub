@@ -671,7 +671,7 @@ body{
 .bcp-pa-nm{font-size:10px;font-weight:700;text-align:center;}
 .bcp-pa-pr{font-size:10px;font-weight:700;color:var(--black);}
 .bcp-pa-bc{width:100%;}
-@media print{#app-root,#pt-btn{display:none!important;}#bc-page{display:block!important;position:static;}  .bcp-hd{display:none;}.bcp-intro{display:none;}.bcp-print-area{border:none;background:none;}.bcp-card{break-inside:avoid;}}
+@media print{#app-root,#pt-btn{display:none!important;}#bc-page{display:block!important;position:static;}  .bcp-hd{display:none;}.bcp-intro{display:none;}.bcp-print-area{border:none;background:none;}.bcp-card{break-inside:avoid;}.bcp-bc-svg,.bcp-pa-bc{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 
 /* TOAST */
 .toast{
@@ -694,15 +694,17 @@ body{
   <div class="bcp-hd">
     <button class="bcp-back" onclick="closeBcPage()">←</button>
     <div class="bcp-title">🏷️ 상품 바코드 카드 출력</div>
-    <button class="bcp-print" onclick="window.print()">🖨️ 인쇄</button>
+    <button type="button" class="bcp-print" onclick="printBarcodeToPdf()">📄 인쇄·PDF 저장</button>
   </div>
   <div class="bcp-body">
     <div class="bcp-intro">
       <div class="bcp-intro-t">📋 치료사 선생님께</div>
       <div class="bcp-intro-b">
-        아래 바코드를 인쇄 → 오려서 상품 카드로 사용하세요.<br>
-        아동이 상품을 집어 바코드 리더기에 스캔하는 훈련을 진행합니다.<br>
-        <strong>난이도에 맞는 상품 카드만 선택해서 제공하세요.</strong>
+        아래 <strong>CODE128</strong> 바코드는 앱에 등록된 상품 ID와 동일해 실제 카메라·스캐너로 인식됩니다.<br>
+        인쇄 후 오려서 상품 카드로 사용하세요. 아동이 카드를 집어 스캔하는 훈련에 쓸 수 있습니다.<br>
+        <strong>PDF로 저장:</strong> 「인쇄·PDF 저장」버튼 → 인쇄 창에서 <strong>대상</strong>을 <strong>PDF로 저장</strong>(또는 Microsoft Print to PDF)으로 고르세요.<br>
+        <strong>스캔이 잘 안 될 때:</strong> 인쇄 배율 <strong>100%</strong>·밝은 조명·카메라와 종이 <strong>15~25cm</strong>·막대가 잘리지 않게 여백을 두세요. (가늘게 인쇄되면 인식률이 떨어집니다.)<br>
+        <strong>난이도에 맞는 상품 카드만 골라 제공하세요.</strong>
       </div>
     </div>
     <div class="bcp-sec-t">✏️ 문구류</div>
@@ -1201,7 +1203,11 @@ async function startCamera(){
   const vid=document.getElementById('scan-video');
   const ph=document.getElementById('scan-ph');
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const stream=await navigator.mediaDevices.getUserMedia({video:{
+      facingMode:'environment',
+      width:{ideal:1280,min:640},
+      height:{ideal:720,min:480}
+    }});
     vid.srcObject=stream; vid.style.display='block';
     if(ph) ph.style.display='none';
     if(btn){btn.textContent='⏹ 스캔 중지';btn.classList.add('scanning');}
@@ -1224,25 +1230,48 @@ function stopCamera(){
 }
 
 let lastScanCode='',lastScanTime=0;
+/** 스캐너·카메라가 돌려주는 문자열 정규화 (공백·제로폭·선행 0) */
+function normalizeScanCode(raw){
+  if(raw==null||raw===undefined) return '';
+  let s=String(raw).trim().replace(/[\s\r\n\u200B-\u200D\uFEFF]/g,'');
+  s=s.replace(/[０-９]/g,function(ch){ return String.fromCharCode(ch.charCodeAt(0)-0xFEE0); });
+  return s;
+}
+function resolveProductFromScan(raw){
+  const c0=normalizeScanCode(raw);
+  if(!c0) return null;
+  if(prodMap[c0]) return prodMap[c0];
+  if(/^\d+$/.test(c0)){
+    const noZero=c0.replace(/^0+/,'')||'0';
+    if(noZero!==c0 && prodMap[noZero]) return prodMap[noZero];
+    for(let i=0;i<PRODUCTS.length;i++){
+      const p=PRODUCTS[i];
+      if(c0===p.id || (c0.endsWith(p.id) && c0.length<=p.id.length+6)) return p;
+    }
+  }
+  return PRODUCTS.find(function(x){ return c0===x.id || c0.indexOf(x.id)>=0 || x.id.indexOf(c0)>=0; })||null;
+}
 function startBarcodeDetect(vid){
   if('BarcodeDetector' in window){
     const det=new BarcodeDetector({formats:['code_128','ean_13','ean_8','upc_a','upc_e','code_39']});
     S._bcInterval=setInterval(async()=>{
       try{
+        if(vid.readyState<2) return;
         const codes=await det.detect(vid);
         if(codes.length>0) handleBarcode(codes[0].rawValue);
       }catch(e){}
-    },400);
+    },280);
   } else {
     toast('💡 이 기기는 "직접 선택"을 권장합니다');
   }
 }
 function handleBarcode(code){
+  const norm=normalizeScanCode(code);
   const now=Date.now();
-  if(code===lastScanCode&&now-lastScanTime<2000) return;
-  lastScanCode=code; lastScanTime=now;
-  const p=prodMap[code]||PRODUCTS.find(x=>code.includes(x.id)||x.id.includes(code));
-  if(!p){toast('⚠️ 미등록 바코드: '+code);return;}
+  if(norm===lastScanCode&&now-lastScanTime<2000) return;
+  lastScanCode=norm; lastScanTime=now;
+  const p=resolveProductFromScan(code);
+  if(!p){toast('⚠️ 미등록 바코드: '+norm);return;}
   addProduct(p);
 }
 function addProduct(p){
@@ -1417,6 +1446,10 @@ function updateStats(){
 /* ====================================================
    BARCODE PAGE
    ==================================================== */
+function printBarcodeToPdf(){
+  toast('인쇄 창에서 «대상» → PDF로 저장을 선택하세요');
+  setTimeout(function(){ window.print(); }, 450);
+}
 function openBcPage(){
   buildBcPage();
   document.getElementById('bc-page').style.display='block';
@@ -1441,7 +1474,7 @@ function makeBcCard(p,selId){
     <svg class="bcp-bc-svg" id="bcsvg-${p.id}"></svg>`;
   c.appendChild(div);
   setTimeout(()=>{
-    try{JsBarcode('#bcsvg-'+p.id,p.id,{format:'CODE128',width:2,height:48,displayValue:true,fontSize:11,margin:4,lineColor:'#1a1a1a',background:'#ffffff'});}
+    try{JsBarcode('#bcsvg-'+p.id,p.id,{format:'CODE128',width:2.4,height:56,displayValue:true,fontSize:11,margin:10,lineColor:'#000',background:'#ffffff'});}
     catch(e){}
   },60);
 }
@@ -1464,7 +1497,7 @@ function buildBcPage(){
         <svg class="bcp-pa-bc" id="bcpa-${p.id}"></svg>`;
       pg.appendChild(item);
       setTimeout(()=>{
-        try{JsBarcode('#bcpa-'+p.id,p.id,{format:'CODE128',width:1.4,height:36,displayValue:false,margin:2,lineColor:'#000',background:'#fff'});}
+        try{JsBarcode('#bcpa-'+p.id,p.id,{format:'CODE128',width:2.6,height:62,displayValue:true,fontSize:8,margin:12,lineColor:'#000',background:'#fff'});}
         catch(e){}
       },80);
     }
