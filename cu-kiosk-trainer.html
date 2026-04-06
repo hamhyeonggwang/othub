@@ -1003,7 +1003,7 @@ body {
   width: 100%; max-width: 168px; min-height: 136px;
   padding: 6px; background: #fff; border-radius: 10px;
 }
-.bp-qr-host img, .bp-qr-host canvas { display: block !important; margin: 0 auto; max-width: 100%; height: auto !important; }
+.bp-qr-host img.qr-bitmap, .bp-qr-host canvas.qr-bitmap { display: block !important; margin: 0 auto; max-width: 100%; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges; }
 
 .bp-print-area {
   margin-top: 28px;
@@ -1025,7 +1025,7 @@ body {
   display: flex; justify-content: center; align-items: center;
   width: 100%; min-height: 108px; padding: 4px; background: #fff; border-radius: 8px;
 }
-.bp-print-qr img, .bp-print-qr canvas { display: block !important; margin: 0 auto; max-width: 100%; height: auto !important; }
+.bp-print-qr img.qr-bitmap, .bp-print-qr canvas.qr-bitmap { display: block !important; margin: 0 auto; max-width: 100%; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges; }
 
 @media print {
   #app-root, #panel-toggle { display: none !important; }
@@ -1034,7 +1034,11 @@ body {
   .bp-intro { display: none; }
   .bp-print-area { border: none; background: none; }
   .bp-card { break-inside: avoid; }
-  .bp-qr-host img, .bp-qr-host canvas, .bp-print-qr img, .bp-print-qr canvas { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bp-qr-host img.qr-bitmap, .bp-qr-host canvas.qr-bitmap, .bp-print-qr img.qr-bitmap, .bp-print-qr canvas.qr-bitmap {
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    width: 38mm !important; height: 38mm !important; max-width: none !important;
+  }
+  .bp-print-qr img.qr-bitmap, .bp-print-qr canvas.qr-bitmap { width: 32mm !important; height: 32mm !important; }
 }
 
 /* TOAST */
@@ -1071,7 +1075,7 @@ body {
         아래 <strong>QR 코드</strong>에는 앱 상품과 같은 <strong>상품 ID</strong>가 들어 있습니다. 1D 바코드보다 카메라 인식이 보통 수월합니다.<br>
         인쇄 후 오려서 상품 카드로 활용하세요.<br>
         <strong>PDF로 저장:</strong> 「인쇄·PDF 저장」→ 인쇄 창에서 <strong>대상</strong>을 <strong>PDF로 저장</strong>(또는 Microsoft Print to PDF)으로 선택하세요.<br>
-        <strong>스캔 팁:</strong> 인쇄 <strong>배율 100%</strong>·QR이 잘리지 않게·밝은 곳에서 카메라를 정면으로 맞추세요.<br>
+        <strong>스캔·인쇄 팁:</strong> 인쇄 <strong>배율 100%</strong>·<strong>고품질/표준</strong>(초절약·초안 끔)·QR <strong>잘림 없음</strong>·카메라 <strong>25~40cm</strong>·밝은 곳에서 정면으로 맞추세요.<br>
         <strong>난이도별 미션에 맞는 상품을 골라 제공하세요.</strong>
       </div>
     </div>
@@ -1522,6 +1526,7 @@ function stopCamera() {
   clearInterval(state._bcInterval);
 }
 
+var _cuScanCanvas = null, _cuScanCtx = null;
 function startBarcodeDetection(video) {
   // Use BarcodeDetector if available (Chrome/Edge)
   if ('BarcodeDetector' in window) {
@@ -1529,12 +1534,23 @@ function startBarcodeDetection(video) {
     state._bcInterval = setInterval(async () => {
       try {
         if (video.readyState < 2) return;
-        const codes = await detector.detect(video);
+        const vw = video.videoWidth, vh = video.videoHeight;
+        if (!vw || !vh) return;
+        var src = video, scale = vw < 1280 ? 2 : 1;
+        if (scale > 1) {
+          if (!_cuScanCanvas) { _cuScanCanvas = document.createElement('canvas'); _cuScanCtx = _cuScanCanvas.getContext('2d'); }
+          _cuScanCanvas.width = vw * scale;
+          _cuScanCanvas.height = vh * scale;
+          _cuScanCtx.imageSmoothingEnabled = false;
+          _cuScanCtx.drawImage(video, 0, 0, _cuScanCanvas.width, _cuScanCanvas.height);
+          src = _cuScanCanvas;
+        }
+        const codes = await detector.detect(src);
         if (codes.length > 0) {
           handleScannedBarcode(codes[0].rawValue);
         }
       } catch(e) {}
-    }, 280);
+    }, 220);
   } else {
     // Fallback: html5-qrcode library via canvas
     state._bcInterval = setInterval(() => {
@@ -2045,18 +2061,31 @@ function updateStats() {
 // =============================================
 //  QR CARD PRINT PAGE
 // =============================================
-function renderProductQrCu(hostEl, text, sizePx) {
+function renderProductQrCu(hostEl, text, displayPx) {
   if (!hostEl || typeof QRCode === 'undefined') return;
   hostEl.innerHTML = '';
+  var d = displayPx || 132;
+  var internal = Math.max(400, Math.round(d * 3));
   try {
     new QRCode(hostEl, {
       text: String(text),
-      width: sizePx,
-      height: sizePx,
+      width: internal,
+      height: internal,
       colorDark: '#000000',
       colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.H
+      correctLevel: QRCode.CorrectLevel.M
     });
+    var img = hostEl.querySelector('img'), cv = hostEl.querySelector('canvas');
+    if (img) {
+      img.classList.add('qr-bitmap');
+      img.style.width = d + 'px';
+      img.style.height = d + 'px';
+      img.alt = 'QR';
+    }
+    if (cv) {
+      cv.classList.add('qr-bitmap');
+      if (!img) { cv.style.width = d + 'px'; cv.style.height = d + 'px'; }
+    }
   } catch (e) { console.warn('QR', e); }
 }
 function printBarcodeToPdfCu() {
