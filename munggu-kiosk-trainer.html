@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>문구야놀자 키오스크 훈련</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
@@ -662,7 +662,10 @@ body{
 .bcp-nm{font-size:13px;font-weight:700;text-align:center;color:var(--text);}
 .bcp-pr{font-size:13px;font-weight:900;color:var(--black);}
 .bcp-bc-lbl{font-size:9px;color:var(--gray3);}
-.bcp-bc-svg{width:100%;max-width:150px;height:auto;}
+.bcp-qr-host{display:flex;justify-content:center;align-items:center;width:100%;max-width:160px;min-height:132px;padding:4px;background:#fff;border-radius:8px;}
+.bcp-qr-host img,.bcp-qr-host canvas{display:block!important;margin:0 auto;max-width:100%;height:auto!important;}
+.bcp-pa-qr{display:flex;justify-content:center;align-items:center;width:100%;min-height:104px;padding:4px;background:#fff;border-radius:6px;}
+.bcp-pa-qr img,.bcp-pa-qr canvas{display:block!important;margin:0 auto;max-width:100%;height:auto!important;}
 .bcp-print-area{margin-top:24px;background:var(--gray1);border-radius:14px;padding:18px;border:2px dashed var(--gray2);}
 .bcp-pa-t{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;text-align:center;}
 .bcp-pa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
@@ -670,8 +673,7 @@ body{
 .bcp-pa-em{font-size:20px;}
 .bcp-pa-nm{font-size:10px;font-weight:700;text-align:center;}
 .bcp-pa-pr{font-size:10px;font-weight:700;color:var(--black);}
-.bcp-pa-bc{width:100%;}
-@media print{#app-root,#pt-btn{display:none!important;}#bc-page{display:block!important;position:static;}  .bcp-hd{display:none;}.bcp-intro{display:none;}.bcp-print-area{border:none;background:none;}.bcp-card{break-inside:avoid;}.bcp-bc-svg,.bcp-pa-bc{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+@media print{#app-root,#pt-btn{display:none!important;}#bc-page{display:block!important;position:static;}  .bcp-hd{display:none;}.bcp-intro{display:none;}.bcp-print-area{border:none;background:none;}.bcp-card{break-inside:avoid;}.bcp-qr-host img,.bcp-qr-host canvas,.bcp-pa-qr img,.bcp-pa-qr canvas{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 
 /* TOAST */
 .toast{
@@ -693,17 +695,17 @@ body{
 <div id="bc-page">
   <div class="bcp-hd">
     <button class="bcp-back" onclick="closeBcPage()">←</button>
-    <div class="bcp-title">🏷️ 상품 바코드 카드 출력</div>
+    <div class="bcp-title">🏷️ 상품 QR 카드 출력</div>
     <button type="button" class="bcp-print" onclick="printBarcodeToPdf()">📄 인쇄·PDF 저장</button>
   </div>
   <div class="bcp-body">
     <div class="bcp-intro">
       <div class="bcp-intro-t">📋 치료사 선생님께</div>
       <div class="bcp-intro-b">
-        아래 <strong>CODE128</strong> 바코드는 앱에 등록된 상품 ID와 동일해 실제 카메라·스캐너로 인식됩니다.<br>
-        인쇄 후 오려서 상품 카드로 사용하세요. 아동이 카드를 집어 스캔하는 훈련에 쓸 수 있습니다.<br>
-        <strong>PDF로 저장:</strong> 「인쇄·PDF 저장」버튼 → 인쇄 창에서 <strong>대상</strong>을 <strong>PDF로 저장</strong>(또는 Microsoft Print to PDF)으로 고르세요.<br>
-        <strong>스캔이 잘 안 될 때:</strong> 인쇄 배율 <strong>100%</strong>·밝은 조명·카메라와 종이 <strong>15~25cm</strong>·막대가 잘리지 않게 여백을 두세요. (가늘게 인쇄되면 인식률이 떨어집니다.)<br>
+        아래 <strong>QR 코드</strong>에는 앱에 등록된 <strong>상품 ID</strong>만 들어 있습니다. 카메라로 읽으면 1D 바코드보다 인식이 수월한 편입니다.<br>
+        인쇄 후 오려서 상품 카드로 사용하세요.<br>
+        <strong>PDF로 저장:</strong> 「인쇄·PDF 저장」→ 인쇄 창에서 <strong>대상</strong>을 <strong>PDF로 저장</strong>(또는 Microsoft Print to PDF)으로 고르세요.<br>
+        <strong>스캔 팁:</strong> 인쇄 배율 <strong>100%</strong>·QR이 잘리지 않게·밝은 곳에서 카메라를 정면으로 맞추세요.<br>
         <strong>난이도에 맞는 상품 카드만 골라 제공하세요.</strong>
       </div>
     </div>
@@ -766,7 +768,7 @@ body{
       </div>
     </div>
     <div style="padding:8px 0 14px;">
-      <button class="tp-btn tp-btn-bc" onclick="openBcPage()">🏷️ 바코드 카드 출력</button>
+      <button class="tp-btn tp-btn-bc" onclick="openBcPage()">🏷️ QR 카드 출력</button>
       <button class="tp-btn tp-btn-rst" style="margin-top:6px;" onclick="resetAll()">🔄 새 세션 시작</button>
     </div>
   </div>
@@ -815,7 +817,7 @@ body{
 <div class="modal-ov" id="modal-ov">
   <div class="modal-box">
     <div class="modal-t">📦 상품 직접 선택</div>
-    <div class="modal-s">바코드 없이 상품을 선택하세요</div>
+    <div class="modal-s">QR 없이 상품을 선택하세요</div>
     <div class="modal-list" id="modal-list"></div>
     <button class="modal-close" onclick="closeModal()">닫기</button>
   </div>
@@ -985,8 +987,8 @@ function rScan(){
     <div class="scan-guide">
       <span class="scan-g-icon">📦</span>
       <div>
-        <div class="scan-g-title">상품 바코드를 스캔하세요</div>
-        <div class="scan-g-sub">바코드 리더기에 상품을 비춰주세요</div>
+        <div class="scan-g-title">상품 QR을 스캔하세요</div>
+        <div class="scan-g-sub">인쇄한 QR 카드를 카메라에 비춰 주세요</div>
       </div>
     </div>
     <div class="scan-vp-wrap">
@@ -997,7 +999,7 @@ function rScan(){
         <video id="scan-video" autoplay playsinline muted></video>
         <div id="scan-ph">
           <div class="ph-ico">📷</div>
-          <p>카메라 버튼을 눌러<br>바코드를 스캔하세요</p>
+          <p>카메라 버튼을 눌러<br>QR을 스캔하세요</p>
         </div>
         <div class="scan-success-pop" id="scan-spop"></div>
       </div>
@@ -1253,7 +1255,7 @@ function resolveProductFromScan(raw){
 }
 function startBarcodeDetect(vid){
   if('BarcodeDetector' in window){
-    const det=new BarcodeDetector({formats:['code_128','ean_13','ean_8','upc_a','upc_e','code_39']});
+    const det=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','upc_e','code_39']});
     S._bcInterval=setInterval(async()=>{
       try{
         if(vid.readyState<2) return;
@@ -1271,7 +1273,7 @@ function handleBarcode(code){
   if(norm===lastScanCode&&now-lastScanTime<2000) return;
   lastScanCode=norm; lastScanTime=now;
   const p=resolveProductFromScan(code);
-  if(!p){toast('⚠️ 미등록 바코드: '+norm);return;}
+  if(!p){toast('⚠️ 미등록 코드: '+norm);return;}
   addProduct(p);
 }
 function addProduct(p){
@@ -1444,8 +1446,22 @@ function updateStats(){
 }
 
 /* ====================================================
-   BARCODE PAGE
+   QR CARD PAGE
    ==================================================== */
+function renderProductQr(hostEl,text,sizePx){
+  if(!hostEl||typeof QRCode==='undefined') return;
+  hostEl.innerHTML='';
+  try{
+    new QRCode(hostEl,{
+      text:String(text),
+      width:sizePx,
+      height:sizePx,
+      colorDark:'#000000',
+      colorLight:'#ffffff',
+      correctLevel:QRCode.CorrectLevel.H
+    });
+  }catch(e){console.warn('QR',e);}
+}
 function printBarcodeToPdf(){
   toast('인쇄 창에서 «대상» → PDF로 저장을 선택하세요');
   setTimeout(function(){ window.print(); }, 450);
@@ -1470,12 +1486,12 @@ function makeBcCard(p,selId){
     <span class="bcp-em">${p.emoji}</span>
     <div class="bcp-nm">${p.name}</div>
     <div class="bcp-pr">${p.price.toLocaleString()}원</div>
-    <div class="bcp-bc-lbl">바코드: ${p.id}</div>
-    <svg class="bcp-bc-svg" id="bcsvg-${p.id}"></svg>`;
+    <div class="bcp-bc-lbl">QR · ${p.id}</div>
+    <div class="bcp-qr-host" id="bcsvg-${p.id}"></div>`;
   c.appendChild(div);
-  setTimeout(()=>{
-    try{JsBarcode('#bcsvg-'+p.id,p.id,{format:'CODE128',width:2.4,height:56,displayValue:true,fontSize:11,margin:10,lineColor:'#000',background:'#ffffff'});}
-    catch(e){}
+  setTimeout(function(){
+    var el=document.getElementById('bcsvg-'+p.id);
+    if(el) renderProductQr(el,p.id,132);
   },60);
 }
 function buildBcPage(){
@@ -1494,11 +1510,11 @@ function buildBcPage(){
         <span class="bcp-pa-em">${p.emoji}</span>
         <div class="bcp-pa-nm">${p.name}</div>
         <div class="bcp-pa-pr">${p.price.toLocaleString()}원</div>
-        <svg class="bcp-pa-bc" id="bcpa-${p.id}"></svg>`;
+        <div class="bcp-pa-qr" id="bcpa-${p.id}"></div>`;
       pg.appendChild(item);
-      setTimeout(()=>{
-        try{JsBarcode('#bcpa-'+p.id,p.id,{format:'CODE128',width:2.6,height:62,displayValue:true,fontSize:8,margin:12,lineColor:'#000',background:'#fff'});}
-        catch(e){}
+      setTimeout(function(){
+        var el=document.getElementById('bcpa-'+p.id);
+        if(el) renderProductQr(el,p.id,104);
       },80);
     }
   });
