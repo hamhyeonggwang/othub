@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>CU 셀프계산대 훈련</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -998,7 +998,12 @@ body {
 .bp-card-name { font-size: 14px; font-weight: 700; color: var(--cu-text); text-align: center; }
 .bp-card-price { font-size: 13px; font-weight: 700; color: #6B21A8; }
 .bp-card-code-label { font-size: 10px; color: var(--cu-text2); }
-.bp-barcode-svg { width: 100%; max-width: 160px; height: auto; }
+.bp-qr-host {
+  display: flex; justify-content: center; align-items: center;
+  width: 100%; max-width: 168px; min-height: 136px;
+  padding: 6px; background: #fff; border-radius: 10px;
+}
+.bp-qr-host img, .bp-qr-host canvas { display: block !important; margin: 0 auto; max-width: 100%; height: auto !important; }
 
 .bp-print-area {
   margin-top: 28px;
@@ -1016,7 +1021,11 @@ body {
 .bp-print-emoji { font-size: 22px; }
 .bp-print-name { font-size: 11px; font-weight: 700; text-align: center; }
 .bp-print-price { font-size: 11px; color: #6B21A8; font-weight: 700; }
-.bp-print-barcode { width: 100%; }
+.bp-print-qr {
+  display: flex; justify-content: center; align-items: center;
+  width: 100%; min-height: 108px; padding: 4px; background: #fff; border-radius: 8px;
+}
+.bp-print-qr img, .bp-print-qr canvas { display: block !important; margin: 0 auto; max-width: 100%; height: auto !important; }
 
 @media print {
   #app-root, #panel-toggle { display: none !important; }
@@ -1025,7 +1034,7 @@ body {
   .bp-intro { display: none; }
   .bp-print-area { border: none; background: none; }
   .bp-card { break-inside: avoid; }
-  .bp-barcode-svg, .bp-print-barcode { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bp-qr-host img, .bp-qr-host canvas, .bp-print-qr img, .bp-print-qr canvas { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
 /* TOAST */
@@ -1052,17 +1061,17 @@ body {
 <div id="barcode-page">
   <div class="bp-header">
     <button class="bp-back-btn" onclick="closeBarcodePageFn()">←</button>
-    <div class="bp-title">🏷️ 상품 바코드 출력</div>
+    <div class="bp-title">🏷️ 상품 QR 출력</div>
     <button type="button" class="bp-print-btn" onclick="printBarcodeToPdfCu()">📄 인쇄·PDF 저장</button>
   </div>
   <div class="bp-body">
     <div class="bp-intro">
       <div class="bp-intro-title">📋 치료사 안내</div>
       <div class="bp-intro-text">
-        아래 <strong>CODE128</strong> 바코드는 앱 상품 ID와 동일해 실제 카메라·스캐너로 인식됩니다.<br>
+        아래 <strong>QR 코드</strong>에는 앱 상품과 같은 <strong>상품 ID</strong>가 들어 있습니다. 1D 바코드보다 카메라 인식이 보통 수월합니다.<br>
         인쇄 후 오려서 상품 카드로 활용하세요.<br>
         <strong>PDF로 저장:</strong> 「인쇄·PDF 저장」→ 인쇄 창에서 <strong>대상</strong>을 <strong>PDF로 저장</strong>(또는 Microsoft Print to PDF)으로 선택하세요.<br>
-        <strong>스캔이 잘 안 될 때:</strong> 인쇄 <strong>배율 100%</strong>·밝은 조명·카메라와 라벨 <strong>15~25cm</strong>·바코드 양옆 여백이 잘리지 않게 하세요. (카메라 해상도·막대 두께에 민감합니다.)<br>
+        <strong>스캔 팁:</strong> 인쇄 <strong>배율 100%</strong>·QR이 잘리지 않게·밝은 곳에서 카메라를 정면으로 맞추세요.<br>
         <strong>난이도별 미션에 맞는 상품을 골라 제공하세요.</strong>
       </div>
     </div>
@@ -1156,7 +1165,7 @@ body {
     </div><!-- /tp-body -->
 
     <div style="padding: 8px 0 14px;">
-      <button class="tp-btn tp-btn-barcode" onclick="openBarcodePageFn()">🏷️ 바코드 카드 출력</button>
+      <button class="tp-btn tp-btn-barcode" onclick="openBarcodePageFn()">🏷️ QR 카드 출력</button>
       <button class="tp-btn tp-btn-reset" style="margin-top:6px" onclick="resetAll()">🔄 새 세션 시작</button>
     </div>
   </div><!-- /therapist-panel -->
@@ -1403,8 +1412,8 @@ function renderScan() {
       <div class="scan-top-guide">
         <span class="scan-guide-icon">📦</span>
         <div>
-          <div class="scan-guide-text">상품 바코드를 스캔하세요</div>
-          <div class="scan-guide-sub">상품 바코드를 카메라에 비춰주세요</div>
+          <div class="scan-guide-text">상품 QR을 스캔하세요</div>
+          <div class="scan-guide-sub">인쇄한 QR 카드를 카메라에 비춰 주세요</div>
         </div>
       </div>
 
@@ -1418,7 +1427,7 @@ function renderScan() {
           <video id="scan-video" autoplay playsinline muted></video>
           <div id="scan-placeholder">
             <div class="ph-icon">📷</div>
-            <p>카메라 버튼을 눌러<br>바코드를 스캔하세요</p>
+            <p>카메라 버튼을 눌러<br>QR을 스캔하세요</p>
           </div>
           <div class="scan-success-pop" id="scan-success-pop">✅ 스캔됨!</div>
         </div>
@@ -1516,7 +1525,7 @@ function stopCamera() {
 function startBarcodeDetection(video) {
   // Use BarcodeDetector if available (Chrome/Edge)
   if ('BarcodeDetector' in window) {
-    const detector = new BarcodeDetector({ formats: ['code_128','ean_13','ean_8','upc_a','upc_e','code_39'] });
+    const detector = new BarcodeDetector({ formats: ['qr_code','code_128','ean_13','ean_8','upc_a','upc_e','code_39'] });
     state._bcInterval = setInterval(async () => {
       try {
         if (video.readyState < 2) return;
@@ -1571,7 +1580,7 @@ function handleScannedBarcode(code) {
 
   var product = resolveProductFromScanCu(code);
   if (!product) {
-    showToast('⚠️ 등록되지 않은 바코드: ' + norm);
+    showToast('⚠️ 등록되지 않은 코드: ' + norm);
     return;
   }
   addProductToCart(product);
@@ -2034,8 +2043,22 @@ function updateStats() {
 }
 
 // =============================================
-//  BARCODE PRINT PAGE
+//  QR CARD PRINT PAGE
 // =============================================
+function renderProductQrCu(hostEl, text, sizePx) {
+  if (!hostEl || typeof QRCode === 'undefined') return;
+  hostEl.innerHTML = '';
+  try {
+    new QRCode(hostEl, {
+      text: String(text),
+      width: sizePx,
+      height: sizePx,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch (e) { console.warn('QR', e); }
+}
 function printBarcodeToPdfCu() {
   showToast('인쇄 창에서 «대상» → PDF로 저장을 선택하세요');
   setTimeout(function () { window.print(); }, 450);
@@ -2061,17 +2084,12 @@ function makeBarcodeCard(product, containerSel) {
     <span class="bp-card-emoji">${product.emoji}</span>
     <div class="bp-card-name">${product.name}</div>
     <div class="bp-card-price">${product.price.toLocaleString()}원</div>
-    <div class="bp-card-code-label">바코드: ${product.id}</div>
-    <svg class="bp-barcode-svg" id="bc-${product.id}"></svg>`;
+    <div class="bp-card-code-label">QR · ${product.id}</div>
+    <div class="bp-qr-host" id="bc-${product.id}"></div>`;
   container.appendChild(card);
-  setTimeout(() => {
-    try {
-      JsBarcode('#bc-' + product.id, product.id, {
-        format: 'CODE128', width: 2.4, height: 56,
-        displayValue: true, fontSize: 12, margin: 10,
-        lineColor: '#000', background: '#ffffff'
-      });
-    } catch(e) { console.warn('Barcode gen error', e); }
+  setTimeout(function () {
+    var el = document.getElementById('bc-' + product.id);
+    if (el) renderProductQrCu(el, product.id, 132);
   }, 50);
 }
 
@@ -2092,16 +2110,11 @@ function buildBarcodePage() {
       <span class="bp-print-emoji">${p.emoji}</span>
       <div class="bp-print-name">${p.name}</div>
       <div class="bp-print-price">${p.price.toLocaleString()}원</div>
-      <svg class="bp-print-barcode" id="bcp-${p.id}"></svg>`;
+      <div class="bp-print-qr" id="bcp-${p.id}"></div>`;
     strip.appendChild(item);
-    setTimeout(() => {
-      try {
-        JsBarcode('#bcp-' + p.id, p.id, {
-          format: 'CODE128', width: 2.6, height: 62,
-          displayValue: true, fontSize: 8, margin: 12,
-          lineColor: '#000', background: '#fff'
-        });
-      } catch(e) {}
+    setTimeout(function () {
+      var el = document.getElementById('bcp-' + p.id);
+      if (el) renderProductQrCu(el, p.id, 104);
     }, 80);
   });
 }
