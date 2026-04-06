@@ -255,7 +255,7 @@ const mpH = new Hands({
   locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${f}`
 });
 mpH.setOptions({
-  maxNumHands: 2,
+  maxNumHands: 4,          // 2인 모드 4손 지원
   modelComplexity: 0,
   minDetectionConfidence: 0.55,
   minTrackingConfidence:  0.5,
@@ -285,27 +285,33 @@ function onHands(res) {
   }));
 
   if (mode === 1) {
-    // model 'Right' = user's screen-left hand
+    // 1P: model 'Right' label = 화면 왼쪽 손, 'Left' = 화면 오른쪽 손
     const lw = wrists.find(w => w.label === 'Right');
     const rw = wrists.find(w => w.label === 'Left');
     if (lw) P[0].hand1 = { x: lw.x, y: lw.y };
     if (rw) P[0].hand2 = { x: rw.x, y: rw.y };
   } else {
-    // 2P: split by screen x
-    wrists.forEach(w => {
-      const pi = w.x < 0.5 ? 0 : 1;
-      if (!P[pi].hand1) P[pi].hand1 = { x: w.x, y: w.y };
-      else              P[pi].hand2 = { x: w.x, y: w.y };
-    });
+    // 2P: 화면 x < 0.5 → P1, x >= 0.5 → P2
+    // 각 영역에서 x좌표 정렬 후 hand1(작은쪽), hand2(큰쪽) 배정
+    const left  = wrists.filter(w => w.x <  0.5).sort((a, b) => a.x - b.x);
+    const right = wrists.filter(w => w.x >= 0.5).sort((a, b) => a.x - b.x);
+    if (left[0])  P[0].hand1 = { x: left[0].x,  y: left[0].y  };
+    if (left[1])  P[0].hand2 = { x: left[1].x,  y: left[1].y  };
+    if (right[0]) P[1].hand1 = { x: right[0].x, y: right[0].y };
+    if (right[1]) P[1].hand2 = { x: right[1].x, y: right[1].y };
   }
   refreshDots();
 }
 
 function refreshDots() {
-  const hasL = P.length > 0 && P[0].hand1 !== null;
-  const hasR = P.length > 0 && (P[0].hand2 !== null || (P[1] && P[1].hand1 !== null));
-  document.getElementById('dl').classList.toggle('on', hasL);
-  document.getElementById('dr').classList.toggle('on', hasR);
+  if (mode === 1) {
+    document.getElementById('dl').classList.toggle('on', !!(P[0]?.hand1));
+    document.getElementById('dr').classList.toggle('on', !!(P[0]?.hand2));
+  } else {
+    // 2P: dl = P1 양손 준비, dr = P2 양손 준비
+    document.getElementById('dl').classList.toggle('on', !!(P[0]?.hand1 && P[0]?.hand2));
+    document.getElementById('dr').classList.toggle('on', !!(P[1]?.hand1 && P[1]?.hand2));
+  }
 }
 
 // ════════════════════════════════════════
@@ -406,8 +412,16 @@ function updateTrays() {
     p.trayActive = p.hand1.y < 0.86 && p.hand2.y < 0.86;
     if (p.trayActive) anyActive = true;
   });
-  document.getElementById('status-msg').textContent =
-    anyActive ? '' : '✋ 양손을 들어올려 트레이를 만드세요!';
+  if (mode === 2) {
+    const p1 = P[0].trayActive, p2 = P[1].trayActive;
+    if (p1 && p2) document.getElementById('status-msg').textContent = '';
+    else if (!p1 && !p2) document.getElementById('status-msg').textContent = '✋ 양쪽 모두 양손을 들어올리세요! (왼쪽←→오른쪽)';
+    else if (!p1) document.getElementById('status-msg').textContent = '✋ 왼쪽 플레이어: 양손을 들어올리세요!';
+    else document.getElementById('status-msg').textContent = '✋ 오른쪽 플레이어: 양손을 들어올리세요!';
+  } else {
+    document.getElementById('status-msg').textContent =
+      anyActive ? '' : '✋ 양손을 들어올려 트레이를 만드세요!';
+  }
 }
 
 // ════════════════════════════════════════
@@ -738,7 +752,8 @@ document.getElementById('btn-again').addEventListener('click', () => startGame(l
 document.getElementById('btn-menu').addEventListener('click', () => {
   gameRunning = false;
   if (animId) cancelAnimationFrame(animId);
-  window.location.href = 'ot-hub-preview.html';
+  document.getElementById('scr-over').style.display  = 'none';
+  document.getElementById('scr-start').style.display = 'flex';
 });
 </script>
 </body>
