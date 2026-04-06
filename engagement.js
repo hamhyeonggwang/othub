@@ -265,6 +265,7 @@
   }
 
   function bindStrip() {
+    if (window.OT_HUB_HIDE_ENGAGEMENT) return;
     var wrap = document.getElementById('lStrip');
     if (!wrap) return;
     if (!wrap.getAttribute('data-eng-del')) {
@@ -275,6 +276,7 @@
   }
 
   function wireModal() {
+    if (window.OT_HUB_HIDE_ENGAGEMENT) return;
     var m = el('engModal');
     if (!m) return;
     m.addEventListener('click', function (e) {
