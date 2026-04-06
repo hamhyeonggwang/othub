@@ -1220,13 +1220,12 @@ let tab='home', cat='전체';
 /* ── LANDING strip ──────────────────────────────────── */
 function buildStrip(){
   const el=document.getElementById('lStrip');
-  const ok=c=>wipLabel(c)==='';
-  const fromGames=GAMES.filter(ok).slice(0,3);
-  const fromVid=VID.filter(ok).slice(0,2);
-  const fromNews=NEWS.filter(ok).slice(0,2);
+  const fromGames=GAMES.filter(isContentReady).slice(0,3);
+  const fromVid=VID.filter(isContentReady).slice(0,2);
+  const fromNews=NEWS.filter(isContentReady).slice(0,2);
   const items=[...fromGames,...fromVid,...fromNews];
   if(items.length<7){
-    for(const s of INFO_SITES.filter(ok)){
+    for(const s of INFO_SITES.filter(isContentReady)){
       if(items.length>=7) break;
       if(!items.some(x=>x.id===s.id)) items.push(s);
     }
@@ -1364,24 +1363,24 @@ function buildFeed(){
 function siteinfoHTML(){return`
   <div class="sec-hd" style="margin-top:4px;"><span class="sec-t">📌 정보</span></div>
   <p style="font-size:12px;color:var(--gray);margin-bottom:10px;">학회·기관 등 외부 웹사이트</p>
-  <div class="g2">${INFO_SITES.map(s=>vcHTML(s)).join('')}</div>
+  <div class="g2">${INFO_SITES.filter(isContentReady).map(s=>vcHTML(s)).join('')}</div>
   <div style="height:8px;"></div>`;}
 
 /* ── INFO (도구 + 카드뉴스 + 도서) ── */
 function infoHTML(){return`
   <div class="sec-hd" style="margin-top:4px;"><span class="sec-t">⚙️ 임상 도구</span><button class="sec-more" onclick="goTabId('tools')">전체 보기</button></div>
-  ${TOOLS.map(t=>tcHTML(t)).join('')}
+  ${TOOLS.filter(isContentReady).map(t=>tcHTML(t)).join('')}
   <div class="divider"></div>
   ${webtoonHTML()}
   <div class="divider"></div>
   <div class="sec-hd"><span class="sec-t">📚 도서</span></div>
-  <div class="hrow" style="margin-bottom:20px;">${BOOKS.map(b=>bcHTML(b)).join('')}</div>
+  <div class="hrow" style="margin-bottom:20px;">${BOOKS.filter(isContentReady).map(b=>bcHTML(b)).join('')}</div>
   <div style="height:8px;"></div>`;}
 
 /* ── VIDEOS ── */
 function videosHTML(){return`
   <div class="sec-hd" style="margin-top:4px;"><span class="sec-t">📺 영상 콘텐츠</span></div>
-  <div class="g2">${VID.map(v=>vcHTML(v)).join('')}</div>
+  <div class="g2">${VID.filter(isContentReady).map(v=>vcHTML(v)).join('')}</div>
   <div class="divider"></div>
   ${webtoonHTML()}
   <div style="height:8px;"></div>`;}
@@ -1389,33 +1388,33 @@ function videosHTML(){return`
 /* ── HOME ── */
 function homeHTML(){return`
   <div class="sec-hd" style="margin-top:4px;"><span class="sec-t">🎮 웹앱</span><button class="sec-more" onclick="goTabId('webapps')">전체 보기</button></div>
-  <div class="hrow" style="margin-bottom:20px;">${GAMES.map(g=>gcHTML(g)).join('')}</div>
+  <div class="hrow" style="margin-bottom:20px;">${GAMES.filter(isContentReady).map(g=>gcHTML(g)).join('')}</div>
   <div class="divider"></div>
   <div class="sec-hd"><span class="sec-t">📌 정보</span><button class="sec-more" onclick="goTabId('siteinfo')">전체 보기</button></div>
-  <div class="g2" style="margin-bottom:0;">${INFO_SITES.map(s=>vcHTML(s)).join('')}</div>
+  <div class="g2" style="margin-bottom:0;">${INFO_SITES.filter(isContentReady).map(s=>vcHTML(s)).join('')}</div>
   <div class="divider"></div>
   <div class="sec-hd"><span class="sec-t">⚙️ 임상 도구</span><button class="sec-more" onclick="selCatById('유용한 정보')">전체 보기</button></div>
-  ${TOOLS.slice(0,2).map(t=>tcHTML(t)).join('')}
+  ${TOOLS.filter(isContentReady).slice(0,2).map(t=>tcHTML(t)).join('')}
   <div class="divider"></div>
   <div class="sec-hd"><span class="sec-t">📰 요일별 카드뉴스</span><button class="sec-more" onclick="selCatById('유용한 정보')">전체 보기</button></div>
   <div class="wt-top-row">${wtTopRowHTML()}</div>
   <div class="divider"></div>
   <div class="sec-hd"><span class="sec-t">📺 영상</span><button class="sec-more" onclick="selCatById('영상')">전체 보기</button></div>
-  <div class="g2">${VID.slice(0,4).map(v=>vcHTML(v)).join('')}</div>
+  <div class="g2">${VID.filter(isContentReady).slice(0,4).map(v=>vcHTML(v)).join('')}</div>
   <div class="divider"></div>
   <div class="sec-hd"><span class="sec-t">📚 추천 도서</span></div>
-  <div class="hrow" style="margin-bottom:20px;">${BOOKS.map(b=>bcHTML(b)).join('')}</div>
+  <div class="hrow" style="margin-bottom:20px;">${BOOKS.filter(isContentReady).map(b=>bcHTML(b)).join('')}</div>
   <div style="height:8px;"></div>`;}
 
 /* ── EXPLORE ── */
 function exploreHTML(){
   let items=[];
-  if(cat==='전체'||cat==='영상') items=[...items,...VID];
-  if(cat==='전체'||cat==='카드뉴스') items=[...items,...NEWS];
+  if(cat==='전체'||cat==='영상') items=[...items,...VID.filter(isContentReady)];
+  if(cat==='전체'||cat==='카드뉴스') items=[...items,...NEWS.filter(isContentReady)];
   if(cat==='게임') return gamesHTML();
-  if(cat==='도서') return`<div class="sec-hd" style="margin-top:4px;"><span class="sec-t">📚 도서</span></div><div class="hrow" style="margin-bottom:20px;">${BOOKS.map(b=>bcHTML(b)).join('')}</div>`;
+  if(cat==='도서') return`<div class="sec-hd" style="margin-top:4px;"><span class="sec-t">📚 도서</span></div><div class="hrow" style="margin-bottom:20px;">${BOOKS.filter(isContentReady).map(b=>bcHTML(b)).join('')}</div>`;
   if(cat==='도구') return toolsHTML();
-  if(!items.length) items=[...VID,...NEWS];
+  if(!items.length) items=[...VID.filter(isContentReady),...NEWS.filter(isContentReady)];
   return`<div class="sec-hd" style="margin-top:4px;"><span class="sec-t">탐색</span></div><div class="g2">${items.map(v=>vcHTML(v)).join('')}</div>`;
 }
 
@@ -1424,7 +1423,7 @@ function webappsHTML(){return`
   <div class="sec-hd" style="margin-top:4px;"><span class="sec-t">🎮 웹앱</span></div>
   <div class="sec-hd" style="margin-top:12px;"><span class="sec-t" style="font-size:13px;color:var(--gray);">🎮 게임</span></div>
   <p style="font-size:12px;color:var(--gray);margin-bottom:10px;">카메라 AI·키오스크·작업치료 훈련 등 웹 기반 콘텐츠</p>
-  <div class="g2" style="margin-bottom:0;">${GAMES.map(g=>vcHTML({...g,ch:g.tag,tags:[],cc:g.cc||'#1A8A7A'})).join('')}</div>
+  <div class="g2" style="margin-bottom:0;">${GAMES.filter(isContentReady).map(g=>vcHTML({...g,ch:g.tag,tags:[],cc:g.cc||'#1A8A7A'})).join('')}</div>
   <div style="height:8px;"></div>`;}
 
 /* ── TOOLS ── */
@@ -1433,7 +1432,7 @@ function toolsHTML(){return`
   <div class="locked"><div class="locked-ico">🔐</div><div class="locked-t">인증된 작업치료사 전용</div>
   <div class="locked-d">작업치료사 회원을 위한 임상 도구입니다. 준비 중입니다.</div>
   </div>
-  ${TOOLS.map(t=>tcHTML(t)).join('')}`;}
+  ${TOOLS.filter(isContentReady).map(t=>tcHTML(t)).join('')}`;}
 
 /* ── PROFILE ── */
 function profileHTML(){return`
@@ -1472,6 +1471,9 @@ function wipLabel(v){
   if(v.type==='book' && !v.url) return ' (준비중)';
   if(v.type==='tool' && !v.url) return ' (준비중)';
   return '';
+}
+function isContentReady(v){
+  return wipLabel(v)==='';
 }
 function itemTitle(v){
   const base=v.title!=null&&v.title!==''?v.title:(v.name!=null?v.name:'');
@@ -1547,19 +1549,19 @@ function doSearch(v){
   const feed = document.getElementById('aFeed');
 
   // 전체 콘텐츠 통합 검색
-  const vidResults   = [...VID,...NEWS].filter(x=>
+  const vidResults   = [...VID,...NEWS].filter(isContentReady).filter(x=>
     x.title.toLowerCase().includes(q)||(x.ch||'').toLowerCase().includes(q)||(x.tags||[]).some(t=>t.toLowerCase().includes(q))
   );
-  const gameResults  = GAMES.filter(x=>
+  const gameResults  = GAMES.filter(isContentReady).filter(x=>
     x.title.toLowerCase().includes(q)||(x.tag||'').toLowerCase().includes(q)
   );
-  const infoSiteResults = INFO_SITES.filter(x=>
+  const infoSiteResults = INFO_SITES.filter(isContentReady).filter(x=>
     x.title.toLowerCase().includes(q)||(x.ch||'').toLowerCase().includes(q)||(x.tags||[]).some(t=>t.toLowerCase().includes(q))
   );
-  const toolResults  = TOOLS.filter(x=>
+  const toolResults  = TOOLS.filter(isContentReady).filter(x=>
     x.name.toLowerCase().includes(q)||x.desc.toLowerCase().includes(q)
   );
-  const bookResults  = BOOKS.filter(x=>
+  const bookResults  = BOOKS.filter(isContentReady).filter(x=>
     x.title.toLowerCase().includes(q)||(x.auth||'').toLowerCase().includes(q)
   );
 
@@ -1622,7 +1624,9 @@ function filterPEO(cat){
   const feed = document.getElementById('aFeed');
   if(cat==='전체'){tab='home';buildFeed();return;}
   const keywords = PEO_MAP[cat]||[cat];
-  const results = [...VID,...NEWS,...GAMES.map(g=>({...g,ch:g.tag,tags:[g.tag],views:g.views}))].filter(item=>{
+  const results = [...VID,...NEWS,...GAMES.map(g=>({...g,ch:g.tag,tags:[g.tag],views:g.views}))]
+    .filter(isContentReady)
+    .filter(item=>{
     const haystack = (item.title+' '+(item.tags||[]).join(' ')+' '+(item.ch||'')+' '+(item.tag||'')).toLowerCase();
     return keywords.some(k=>haystack.includes(k.toLowerCase()));
   });
@@ -1729,7 +1733,7 @@ function cnCardHTML(n){
 function cardnewsFeedHTML(){
   let html='';
   SERIES.forEach(s=>{
-    const items=NEWS.filter(n=>n.series===s.id);
+    const items=NEWS.filter(n=>n.series===s.id).filter(isContentReady);
     if(!items.length) return;
     html+=`<div class="series-header" style="background:linear-gradient(135deg,${s.color}12,${s.color}06);border:1px solid ${s.color}20;">
       <div class="series-day" style="background:${s.color};">${s.day}</div>
@@ -1812,7 +1816,7 @@ function dayTabsHTML(){
 
 function wtTopRowHTML(){
   // 조회수 기준 상위 4개
-  const sorted = [...NEWS].sort((a,b)=>{
+  const sorted = [...NEWS].filter(isContentReady).sort((a,b)=>{
     const av = parseFloat((a.views||'0').replace(/[^0-9.]/g,'')) * (a.views&&a.views.includes('K')?1000:1);
     const bv = parseFloat((b.views||'0').replace(/[^0-9.]/g,'')) * (b.views&&b.views.includes('K')?1000:1);
     return bv - av;
@@ -1834,7 +1838,8 @@ function wtTopRowHTML(){
 }
 
 function wtGridHTML(day){
-  const filtered = day==='all' ? NEWS : NEWS.filter(n=>SERIES_DAY[n.series]===day);
+  const pool = NEWS.filter(isContentReady);
+  const filtered = day==='all' ? pool : pool.filter(n=>SERIES_DAY[n.series]===day);
   if(!filtered.length){
     return `<div class="wt-empty" style="grid-column:1/-1;">
       <div class="wt-empty-ico">📭</div>
