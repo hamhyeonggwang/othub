@@ -1025,6 +1025,7 @@ body {
   .bp-intro { display: none; }
   .bp-print-area { border: none; background: none; }
   .bp-card { break-inside: avoid; }
+  .bp-barcode-svg, .bp-print-barcode { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
 /* TOAST */
@@ -1052,14 +1053,16 @@ body {
   <div class="bp-header">
     <button class="bp-back-btn" onclick="closeBarcodePageFn()">←</button>
     <div class="bp-title">🏷️ 상품 바코드 출력</div>
-    <button class="bp-print-btn" onclick="window.print()">🖨️ 인쇄</button>
+    <button type="button" class="bp-print-btn" onclick="printBarcodeToPdfCu()">📄 인쇄·PDF 저장</button>
   </div>
   <div class="bp-body">
     <div class="bp-intro">
       <div class="bp-intro-title">📋 치료사 안내</div>
       <div class="bp-intro-text">
-        아래 바코드를 인쇄한 뒤 오려서 상품 카드로 활용하세요.<br>
-        아동이 상품을 집어 바코드를 스캔하는 훈련을 진행합니다.<br>
+        아래 <strong>CODE128</strong> 바코드는 앱 상품 ID와 동일해 실제 카메라·스캐너로 인식됩니다.<br>
+        인쇄 후 오려서 상품 카드로 활용하세요.<br>
+        <strong>PDF로 저장:</strong> 「인쇄·PDF 저장」→ 인쇄 창에서 <strong>대상</strong>을 <strong>PDF로 저장</strong>(또는 Microsoft Print to PDF)으로 선택하세요.<br>
+        <strong>스캔이 잘 안 될 때:</strong> 인쇄 <strong>배율 100%</strong>·밝은 조명·카메라와 라벨 <strong>15~25cm</strong>·바코드 양옆 여백이 잘리지 않게 하세요. (카메라 해상도·막대 두께에 민감합니다.)<br>
         <strong>난이도별 미션에 맞는 상품을 골라 제공하세요.</strong>
       </div>
     </div>
@@ -1476,7 +1479,11 @@ async function startCamera() {
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: {ideal:640}, height:{ideal:480} }
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1280, min: 640 },
+        height: { ideal: 720, min: 480 }
+      }
     });
     video.srcObject = stream;
     video.style.display = 'block';
@@ -1512,12 +1519,13 @@ function startBarcodeDetection(video) {
     const detector = new BarcodeDetector({ formats: ['code_128','ean_13','ean_8','upc_a','upc_e','code_39'] });
     state._bcInterval = setInterval(async () => {
       try {
+        if (video.readyState < 2) return;
         const codes = await detector.detect(video);
         if (codes.length > 0) {
           handleScannedBarcode(codes[0].rawValue);
         }
       } catch(e) {}
-    }, 400);
+    }, 280);
   } else {
     // Fallback: html5-qrcode library via canvas
     state._bcInterval = setInterval(() => {
@@ -1534,18 +1542,36 @@ function startBarcodeDetection(video) {
 
 let lastScanId = null;
 let lastScanTime = 0;
+function normalizeScanCodeCu(raw) {
+  if (raw == null || raw === undefined) return '';
+  var s = String(raw).trim().replace(/[\s\r\n\u200B-\u200D\uFEFF]/g, '');
+  s = s.replace(/[０-９]/g, function (ch) { return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0); });
+  return s;
+}
+function resolveProductFromScanCu(raw) {
+  var c0 = normalizeScanCodeCu(raw);
+  if (!c0) return null;
+  if (productMap[c0]) return productMap[c0];
+  if (/^\d+$/.test(c0)) {
+    var noZero = c0.replace(/^0+/, '') || '0';
+    if (noZero !== c0 && productMap[noZero]) return productMap[noZero];
+    for (var i = 0; i < PRODUCTS.length; i++) {
+      var p = PRODUCTS[i];
+      if (c0 === p.id || (c0.length >= p.id.length && c0.endsWith(p.id) && c0.length <= p.id.length + 6)) return p;
+    }
+  }
+  return PRODUCTS.find(function (p) { return c0 === p.id || c0.indexOf(p.id) >= 0 || p.id.indexOf(c0) >= 0; }) || null;
+}
 function handleScannedBarcode(code) {
-  const now = Date.now();
-  if (code === lastScanId && now - lastScanTime < 2000) return; // debounce
-  lastScanId = code;
+  var norm = normalizeScanCodeCu(code);
+  var now = Date.now();
+  if (norm === lastScanId && now - lastScanTime < 2000) return;
+  lastScanId = norm;
   lastScanTime = now;
 
-  const product = productMap[code];
+  var product = resolveProductFromScanCu(code);
   if (!product) {
-    // Try partial match
-    const found = PRODUCTS.find(p => code.includes(p.id) || p.id.includes(code));
-    if (found) { addProductToCart(found); return; }
-    showToast('⚠️ 등록되지 않은 바코드: ' + code);
+    showToast('⚠️ 등록되지 않은 바코드: ' + norm);
     return;
   }
   addProductToCart(product);
@@ -2010,6 +2036,10 @@ function updateStats() {
 // =============================================
 //  BARCODE PRINT PAGE
 // =============================================
+function printBarcodeToPdfCu() {
+  showToast('인쇄 창에서 «대상» → PDF로 저장을 선택하세요');
+  setTimeout(function () { window.print(); }, 450);
+}
 function openBarcodePageFn() {
   buildBarcodePage();
   document.getElementById('barcode-page').style.display = 'block';
@@ -2037,9 +2067,9 @@ function makeBarcodeCard(product, containerSel) {
   setTimeout(() => {
     try {
       JsBarcode('#bc-' + product.id, product.id, {
-        format: 'CODE128', width: 2, height: 50,
-        displayValue: true, fontSize: 12, margin: 4,
-        lineColor: '#1a1a2e', background: '#ffffff'
+        format: 'CODE128', width: 2.4, height: 56,
+        displayValue: true, fontSize: 12, margin: 10,
+        lineColor: '#000', background: '#ffffff'
       });
     } catch(e) { console.warn('Barcode gen error', e); }
   }, 50);
@@ -2067,8 +2097,8 @@ function buildBarcodePage() {
     setTimeout(() => {
       try {
         JsBarcode('#bcp-' + p.id, p.id, {
-          format: 'CODE128', width: 1.5, height: 40,
-          displayValue: false, margin: 2,
+          format: 'CODE128', width: 2.6, height: 62,
+          displayValue: true, fontSize: 8, margin: 12,
           lineColor: '#000', background: '#fff'
         });
       } catch(e) {}
