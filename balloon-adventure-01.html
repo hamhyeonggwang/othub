@@ -833,6 +833,7 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="game-audio.js"></script>
 
 <script>
 // ══════════════════════════════════════════════════════════
@@ -1095,6 +1096,7 @@ function jumpToLevel(idx){
     d.classList.toggle('active',i===idx);
   }
   showStory(idx);
+  if(window.GameAudio)GameAudio.tap();
 }
 
 // ── Hint ──
@@ -1291,6 +1293,7 @@ function dropToZone12(e,zone){
   tries++;updateSidebarStats();
   if(zone.dataset.color===color){
     score++;updateSidebarStats();placedSet.add(color);
+    if(window.GameAudio)GameAudio.pop();
     document.getElementById(`tc-${color}`)?.classList.add('used');
     document.getElementById(`ci-${color}`)?.classList.add('placed');
     zone.classList.add('flash-ok');setTimeout(()=>zone.classList.remove('flash-ok'),500);
@@ -1298,6 +1301,7 @@ function dropToZone12(e,zone){
     if(hintLevel==='easy') showHintOverlay('잘했어요! 🎉');
     if(placedSet.size===LEVELS[currentLevel].colors.length)setTimeout(()=>levelComplete(),700);
   } else {
+    if(window.GameAudio)GameAudio.error();
     zone.classList.add('flash-err');setTimeout(()=>zone.classList.remove('flash-err'),500);
     showFeedback('💨');addLog(`❌ ${color}→${zone.dataset.color} 오답`,'err');
     if(hintLevel==='easy') showHintOverlay('다시 한번 해봐요! 색깔을 잘 보세요 👀');
@@ -1331,9 +1335,11 @@ function onPairClick(card){
     prev.classList.remove('selected');card.classList.remove('selected');
     prev.classList.add('matched');card.classList.add('matched');
     pairMatchedCount++;score++;updateSidebarStats();
+    if(window.GameAudio)GameAudio.pop();
     showFeedback('⭐');addLog(`✅ ${card.dataset.color} 짝 완성`,'ok');
     if(pairMatchedCount===4)setTimeout(()=>levelComplete(),700);
   } else {
+    if(window.GameAudio)GameAudio.error();
     showFeedback('💨');addLog(`❌ 짝 실패`,'err');
     setTimeout(()=>{prev.classList.remove('selected');card.classList.remove('selected');},600);
   }
@@ -1379,10 +1385,11 @@ function dropToSeqSlot(x,y){
       const sv=hit.querySelector('svg');if(sv)sv.style.opacity='1';
       hit.classList.add('filled-slot');hit.classList.remove('active-slot');
       seqNextSlot++;const ns=document.querySelector(`[data-slot-idx="${seqNextSlot}"]`);if(ns)ns.classList.add('active-slot');
-      score++;updateSidebarStats();showFeedback('⭐');addLog(`✅ 순서 ${seqNextSlot}번 정답`,'ok');
+      score++;updateSidebarStats();if(window.GameAudio)GameAudio.pop();showFeedback('⭐');addLog(`✅ 순서 ${seqNextSlot}번 정답`,'ok');
       document.getElementById('seq-hint').textContent=seqNextSlot<6?`다음: ${seqNextSlot+1}번 슬롯에 그 다음으로 작은 풍선을!`:'모두 완성!';
       if(seqNextSlot===6)setTimeout(()=>levelComplete(),700);
     } else {
+      if(window.GameAudio)GameAudio.error();
       showFeedback('💨');hit.classList.add('flash-err');setTimeout(()=>hit.classList.remove('flash-err'),500);addLog(`❌ 순서 오답`,'err');
     }
   } else {document.getElementById(`st-${activeDrag?.color}`)?.classList.remove('active-card');}
@@ -1441,10 +1448,12 @@ function dropStormBalloon(x,y){
     el.dataset.rescued='1';el.style.opacity='0';el.style.transition='opacity .4s';setTimeout(()=>el.remove(),500);
     const sv=hit.querySelector('.rzone-inner');if(sv)sv.style.opacity='1';
     stormRescued++;score++;updateSidebarStats();
+    if(window.GameAudio)GameAudio.pop();
     showFeedback('⭐');addLog(`✅ ${color} 구조 (${stormRescued}/8)`,'ok');
     document.getElementById('rescue-msg').textContent=`🎈 ${stormRescued}/8 구조 완료!`;
     if(stormRescued>=8){clearInterval(timerInterval);setTimeout(()=>levelComplete(),600);}
   } else {
+    if(window.GameAudio)GameAudio.error();
     el.style.left=10+Math.random()*75+'%';el.style.top=5+Math.random()*55+'%';el.style.animation='';
     showFeedback('💨');addLog(`❌ 구조 실패`,'err');
   }
@@ -1454,6 +1463,7 @@ function dropStormBalloon(x,y){
 //  LEVEL COMPLETE
 // ══════════════════════════════════════════════════════════
 function levelComplete(timeout=false){
+  if(window.GameAudio)GameAudio.fanfare();
   clearInterval(timerInterval);
   document.getElementById('hud-time').style.display='none';
   document.getElementById('timer-wrap').style.display='none';
@@ -1473,6 +1483,7 @@ function levelComplete(timeout=false){
   buildConfetti();
 }
 function onNextLevel(){
+  if(window.GameAudio)GameAudio.tap();
   if(currentLevel>=4){ctrlReset();return;}
   document.getElementById(`dot-${currentLevel}`).classList.remove('active');
   document.getElementById(`dot-${currentLevel}`).classList.add('done');

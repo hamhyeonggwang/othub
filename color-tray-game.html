@@ -117,6 +117,7 @@ body{background:#0d0d2b;font-family:'Nunito',sans-serif;overflow:hidden;width:10
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
+<script src="game-audio.js"></script>
 <script>
 'use strict';
 
@@ -145,45 +146,19 @@ const FEVER_FRAMES = 300;   // ~5s at 60fps
 const FEVER_STARS  = 45;
 
 // ════════════════════════════════════════
-//  AUDIO  (created lazily on first user gesture)
+//  AUDIO (game-audio.js)
 // ════════════════════════════════════════
-let AC = null;
-
-function getAC() {
-  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-  return AC;
-}
-
-function playTone(freq, type, dur, vol = 0.22) {
-  try {
-    const ac = getAC();
-    const o  = ac.createOscillator();
-    const g  = ac.createGain();
-    o.connect(g); g.connect(ac.destination);
-    o.type = type;
-    o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
-    o.start(); o.stop(ac.currentTime + dur);
-  } catch(e) {}
-}
-
-const PITCHES = { red:440, blue:523, yellow:587, green:494, orange:659, pink:784, rainbow:1047 };
-
 function sfxCatch(name) {
-  const f = PITCHES[name] || 440;
-  playTone(f,     'sine',     0.12, 0.28);
-  playTone(f*1.5, 'sine',     0.08, 0.14);
-  playTone(f*2,   'triangle', 0.06, 0.10);
+  if (window.GameAudio) GameAudio.catchColor(name);
 }
 function sfxFeverStart() {
-  [523,659,784,1047].forEach((f,i) => setTimeout(() => playTone(f,'square',0.14,0.18), i*65));
+  if (window.GameAudio) GameAudio.feverStart();
 }
 function sfxStar() {
-  playTone(1000 + Math.random()*600, 'sine', 0.06, 0.18);
+  if (window.GameAudio) GameAudio.star();
 }
 function sfxCombo(n) {
-  playTone(300 + n*45, 'triangle', 0.1, 0.22);
+  if (window.GameAudio) GameAudio.combo(n);
 }
 
 // ════════════════════════════════════════
@@ -352,6 +327,11 @@ function startGame(m) {
 
   if (!cameraOn) { cameraOn = true; mpCam.start(); }
 
+  if (window.GameAudio) {
+    GameAudio.resume();
+    GameAudio.gameStart();
+  }
+
   gameRunning = true;
   gameStartTs = performance.now();
 
@@ -361,6 +341,8 @@ function startGame(m) {
 
 function endGame() {
   gameRunning = false;
+
+  if (window.GameAudio) GameAudio.gameEnd();
 
   const el = document.getElementById('scr-over');
   el.style.display = 'flex';
@@ -750,6 +732,7 @@ document.getElementById('btn-1p').addEventListener('click', () => startGame(1));
 document.getElementById('btn-2p').addEventListener('click', () => startGame(2));
 document.getElementById('btn-again').addEventListener('click', () => startGame(lastMode));
 document.getElementById('btn-menu').addEventListener('click', () => {
+  if (window.GameAudio) GameAudio.tap();
   gameRunning = false;
   if (animId) cancelAnimationFrame(animId);
   document.getElementById('scr-over').style.display  = 'none';

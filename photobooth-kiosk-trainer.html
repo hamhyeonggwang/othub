@@ -827,5 +827,7 @@ function revealMs(){const t=document.getElementById('wmtask');const r=document.g
 function updateStats(){document.getElementById('st-t').textContent=S.stats.trials;document.getElementById('st-c').textContent=S.stats.correct;const p=S.stats.trials>0?Math.round(S.stats.correct/S.stats.trials*100):0;document.getElementById('st-p').textContent=p+'%';}
 setMission();render();
 </script>
+<script src="game-audio.js"></script>
+<script>if(window.GameAudio)GameAudio.bindUiTap(document.body);</script>
 </body>
 </html>
