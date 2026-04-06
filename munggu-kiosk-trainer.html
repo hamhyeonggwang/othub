@@ -663,9 +663,9 @@ body{
 .bcp-pr{font-size:13px;font-weight:900;color:var(--black);}
 .bcp-bc-lbl{font-size:9px;color:var(--gray3);}
 .bcp-qr-host{display:flex;justify-content:center;align-items:center;width:100%;max-width:160px;min-height:132px;padding:4px;background:#fff;border-radius:8px;}
-.bcp-qr-host img,.bcp-qr-host canvas{display:block!important;margin:0 auto;max-width:100%;height:auto!important;}
+.bcp-qr-host img.qr-bitmap,.bcp-qr-host canvas.qr-bitmap{display:block!important;margin:0 auto;max-width:100%;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges;}
 .bcp-pa-qr{display:flex;justify-content:center;align-items:center;width:100%;min-height:104px;padding:4px;background:#fff;border-radius:6px;}
-.bcp-pa-qr img,.bcp-pa-qr canvas{display:block!important;margin:0 auto;max-width:100%;height:auto!important;}
+.bcp-pa-qr img.qr-bitmap,.bcp-pa-qr canvas.qr-bitmap{display:block!important;margin:0 auto;max-width:100%;object-fit:contain;image-rendering:pixelated;image-rendering:crisp-edges;}
 .bcp-print-area{margin-top:24px;background:var(--gray1);border-radius:14px;padding:18px;border:2px dashed var(--gray2);}
 .bcp-pa-t{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px;text-align:center;}
 .bcp-pa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
@@ -673,7 +673,7 @@ body{
 .bcp-pa-em{font-size:20px;}
 .bcp-pa-nm{font-size:10px;font-weight:700;text-align:center;}
 .bcp-pa-pr{font-size:10px;font-weight:700;color:var(--black);}
-@media print{#app-root,#pt-btn{display:none!important;}#bc-page{display:block!important;position:static;}  .bcp-hd{display:none;}.bcp-intro{display:none;}.bcp-print-area{border:none;background:none;}.bcp-card{break-inside:avoid;}.bcp-qr-host img,.bcp-qr-host canvas,.bcp-pa-qr img,.bcp-pa-qr canvas{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+@media print{#app-root,#pt-btn{display:none!important;}#bc-page{display:block!important;position:static;}  .bcp-hd{display:none;}.bcp-intro{display:none;}.bcp-print-area{border:none;background:none;}.bcp-card{break-inside:avoid;}.bcp-qr-host img.qr-bitmap,.bcp-qr-host canvas.qr-bitmap,.bcp-pa-qr img.qr-bitmap,.bcp-pa-qr canvas.qr-bitmap{-webkit-print-color-adjust:exact;print-color-adjust:exact;width:38mm!important;height:38mm!important;max-width:none!important;}.bcp-pa-qr img.qr-bitmap,.bcp-pa-qr canvas.qr-bitmap{width:32mm!important;height:32mm!important;}}
 
 /* TOAST */
 .toast{
@@ -705,7 +705,7 @@ body{
         아래 <strong>QR 코드</strong>에는 앱에 등록된 <strong>상품 ID</strong>만 들어 있습니다. 카메라로 읽으면 1D 바코드보다 인식이 수월한 편입니다.<br>
         인쇄 후 오려서 상품 카드로 사용하세요.<br>
         <strong>PDF로 저장:</strong> 「인쇄·PDF 저장」→ 인쇄 창에서 <strong>대상</strong>을 <strong>PDF로 저장</strong>(또는 Microsoft Print to PDF)으로 고르세요.<br>
-        <strong>스캔 팁:</strong> 인쇄 배율 <strong>100%</strong>·QR이 잘리지 않게·밝은 곳에서 카메라를 정면으로 맞추세요.<br>
+        <strong>스캔·인쇄 팁:</strong> 인쇄는 <strong>배율 100%</strong>·<strong>고품질/표준</strong>(초절약·초안 끔)·QR이 <strong>잘리지 않게</strong>·카메라는 <strong>25~40cm</strong>·밝은 곳에서 정면으로 맞추세요.<br>
         <strong>난이도에 맞는 상품 카드만 골라 제공하세요.</strong>
       </div>
     </div>
@@ -1253,16 +1253,27 @@ function resolveProductFromScan(raw){
   }
   return PRODUCTS.find(function(x){ return c0===x.id || c0.indexOf(x.id)>=0 || x.id.indexOf(c0)>=0; })||null;
 }
+var _mungguScanCanvas=null,_mungguScanCtx=null;
 function startBarcodeDetect(vid){
   if('BarcodeDetector' in window){
     const det=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','upc_e','code_39']});
     S._bcInterval=setInterval(async()=>{
       try{
         if(vid.readyState<2) return;
-        const codes=await det.detect(vid);
+        const vw=vid.videoWidth,vh=vid.videoHeight;
+        if(!vw||!vh) return;
+        var src=vid,scale=vw<1280?2:1;
+        if(scale>1){
+          if(!_mungguScanCanvas){_mungguScanCanvas=document.createElement('canvas');_mungguScanCtx=_mungguScanCanvas.getContext('2d');}
+          _mungguScanCanvas.width=vw*scale;_mungguScanCanvas.height=vh*scale;
+          _mungguScanCtx.imageSmoothingEnabled=false;
+          _mungguScanCtx.drawImage(vid,0,0,_mungguScanCanvas.width,_mungguScanCanvas.height);
+          src=_mungguScanCanvas;
+        }
+        const codes=await det.detect(src);
         if(codes.length>0) handleBarcode(codes[0].rawValue);
       }catch(e){}
-    },280);
+    },220);
   } else {
     toast('💡 이 기기는 "직접 선택"을 권장합니다');
   }
@@ -1448,18 +1459,29 @@ function updateStats(){
 /* ====================================================
    QR CARD PAGE
    ==================================================== */
-function renderProductQr(hostEl,text,sizePx){
+function renderProductQr(hostEl,text,displayPx){
   if(!hostEl||typeof QRCode==='undefined') return;
   hostEl.innerHTML='';
+  var d=displayPx||132;
+  var internal=Math.max(400,Math.round(d*3));
   try{
     new QRCode(hostEl,{
       text:String(text),
-      width:sizePx,
-      height:sizePx,
+      width:internal,
+      height:internal,
       colorDark:'#000000',
       colorLight:'#ffffff',
-      correctLevel:QRCode.CorrectLevel.H
+      correctLevel:QRCode.CorrectLevel.M
     });
+    var img=hostEl.querySelector('img'),cv=hostEl.querySelector('canvas');
+    if(img){
+      img.classList.add('qr-bitmap');
+      img.style.width=d+'px';img.style.height=d+'px';img.alt='QR';
+    }
+    if(cv){
+      cv.classList.add('qr-bitmap');
+      if(!img){cv.style.width=d+'px';cv.style.height=d+'px';}
+    }
   }catch(e){console.warn('QR',e);}
 }
 function printBarcodeToPdf(){
