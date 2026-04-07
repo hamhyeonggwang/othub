@@ -1080,6 +1080,7 @@ img{display:block;max-width:100%;}
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>window.OT_HUB_HIDE_ENGAGEMENT=true;</script>
 <script src="engagement.js"></script>
+<script src="game-thumbs.js"></script>
 
 <div id="engModal" role="dialog" aria-modal="true" aria-labelledby="engModalTitle">
   <div class="eng-dialog">
@@ -1121,17 +1122,17 @@ const GAMES=[
   {id:'g3',type:'game',title:'얼굴 표정 따라하기',img:'https://picsum.photos/seed/og3/400/300',tag:'Face Mesh',views:'2.1K'},
   {id:'g4',type:'game',title:'ADL 시뮬레이터',img:'https://picsum.photos/seed/og4/400/300',tag:'일상생활',views:'4.5K'},
   {id:'g5',type:'game',title:'색깔 블록 쌓기',img:'https://picsum.photos/seed/og5/400/300',tag:'시지각',views:'2.9K'},
-  {id:'g6',type:'game',title:'빽다방 키오스크 훈련',tag:'게임',ch:'OT Hub',img:'assets/paik-kiosk-thumb.png',cc:'#5C4033',url:'paik-kiosk-trainer.html',views:'—'},
-  {id:'g7',type:'game',title:'문구야놀자 키오스크 훈련',tag:'게임',ch:'OT Hub',img:'assets/munggu-kiosk-thumb.png',cc:'#E85D04',url:'munggu-kiosk-trainer.html',views:'—'},
-  {id:'g8',type:'game',title:'CU 편의점 키오스크 훈련',tag:'게임',ch:'OT Hub',img:'assets/cu-kiosk-thumb.png',cc:'#6D28D9',url:'cu-kiosk-trainer.html',views:'—'},
-  {id:'g9',type:'game',title:'마라탕 키오스크 훈련',tag:'게임',ch:'OT Hub',img:'assets/maratang-kiosk-thumb.png',cc:'#C0392B',url:'maratang-kiosk-trainer.html',views:'—'},
-  {id:'g10',type:'game',title:'하루필름 키오스크 훈련',tag:'게임',ch:'OT Hub',img:'assets/harufilm-kiosk-thumb.svg',cc:'#FF5C8D',url:'photobooth-kiosk-trainer.html',views:'—'},
-  {id:'g11',type:'game',title:'Balloon Adventure',tag:'게임',ch:'작업치료 훈련',img:'assets/balloon-adventure-thumb.png',cc:'#E85A9B',url:'balloon-adventure-01.html',views:'—'},
-  {id:'g12',type:'game',title:'색깔 공 받기',tag:'게임',ch:'작업치료 훈련',img:'https://picsum.photos/seed/colortray/400/300',cc:'#6366F1',url:'color-tray-game.html',views:'—'},
-  {id:'g13',type:'game',title:'누구나 쓰기게임',tag:'게임',ch:'작업치료 훈련',img:'https://picsum.photos/seed/writinggame/400/300',cc:'#2E86DE',url:'writing-game-v1.html',views:'—'},
+  {id:'g6',type:'game',title:'빽다방 키오스크 훈련',tag:'게임',ch:'OT Hub',img:OT_HUB_THUMB.paikKiosk,cc:'#5C4033',url:'paik-kiosk-trainer.html',views:'—'},
+  {id:'g7',type:'game',title:'문구야놀자 키오스크 훈련',tag:'게임',ch:'OT Hub',img:OT_HUB_THUMB.mungguKiosk,cc:'#E85D04',url:'munggu-kiosk-trainer.html',views:'—'},
+  {id:'g8',type:'game',title:'CU 편의점 키오스크 훈련',tag:'게임',ch:'OT Hub',img:OT_HUB_THUMB.cuKiosk,cc:'#6D28D9',url:'cu-kiosk-trainer.html',views:'—'},
+  {id:'g9',type:'game',title:'마라탕 키오스크 훈련',tag:'게임',ch:'OT Hub',img:OT_HUB_THUMB.maratangKiosk,cc:'#C0392B',url:'maratang-kiosk-trainer.html',views:'—'},
+  {id:'g10',type:'game',title:'하루필름 키오스크 훈련',tag:'게임',ch:'OT Hub',img:OT_HUB_THUMB.haruFilmKiosk,cc:'#FF5C8D',url:'photobooth-kiosk-trainer.html',views:'—'},
+  {id:'g11',type:'game',title:'Balloon Adventure',tag:'게임',ch:'작업치료 훈련',img:OT_HUB_THUMB.balloonAdventure,cc:'#E85A9B',url:'balloon-adventure-01.html',views:'—'},
+  {id:'g12',type:'game',title:'색깔 공 받기',tag:'게임',ch:'작업치료 훈련',img:OT_HUB_THUMB.colorTray,cc:'#6366F1',url:'color-tray-game.html',views:'—'},
+  {id:'g13',type:'game',title:'누구나 쓰기게임',tag:'게임',ch:'작업치료 훈련',img:OT_HUB_THUMB.writingGame,cc:'#2E86DE',url:'writing-game-v1.html',views:'—'},
 ];
 const INFO_SITES=[
-  {id:'w4',type:'info',title:'대한아동학교작업치료학회 사이트',ch:'ksotcs.kr',img:'assets/ksotcs-site-thumb.png',tags:['학회','Web'],cc:'#0284C7',url:'http://ksotcs.kr'},
+  {id:'w4',type:'info',title:'대한아동학교작업치료학회 사이트',ch:'ksotcs.kr',img:OT_HUB_THUMB.ksotcsSite,tags:['학회','Web'],cc:'#0284C7',url:'http://ksotcs.kr'},
 ];
 
 const BOOKS=[
