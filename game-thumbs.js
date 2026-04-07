@@ -109,6 +109,22 @@
     '</svg>'
   );
 
+  T.writingGame = svgDataUri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
+      '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#B8E4F7"/><stop offset="100%" stop-color="#2E86DE"/></linearGradient></defs>' +
+      '<rect width="400" height="300" fill="url(#wg)"/>' +
+      '<text x="200" y="86" text-anchor="middle" font-size="48">✏️</text>' +
+      '<text x="200" y="142" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" font-weight="800" fill="#fff">누구나 쓰기게임</text>' +
+      '<text x="200" y="174" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="rgba(255,255,255,.92)">자음·모음·숫자 글자 색칠</text>' +
+      '<rect x="120" y="200" width="160" height="48" rx="14" fill="rgba(255,255,255,.95)" stroke="rgba(46,134,222,.35)" stroke-width="2"/>' +
+      '<text x="152" y="232" text-anchor="middle" font-family="system-ui,sans-serif" font-size="28" font-weight="800" fill="#E84040">ㄱ</text>' +
+      '<text x="184" y="232" text-anchor="middle" font-family="system-ui,sans-serif" font-size="28" font-weight="800" fill="#2E86DE">ㅏ</text>' +
+      '<text x="216" y="232" text-anchor="middle" font-family="system-ui,sans-serif" font-size="28" font-weight="800" fill="#26de81">1</text>' +
+      '<text x="248" y="232" text-anchor="middle" font-family="system-ui,sans-serif" font-size="28" font-weight="800" fill="#FF9F43">A</text>' +
+      '<text x="200" y="276" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="rgba(255,255,255,.85)">터치로 따라 그리기</text>' +
+    '</svg>'
+  );
+
   T.ksotcsSite = svgDataUri(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
       '<defs><linearGradient id="ks" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#0369a1"/></linearGradient></defs>' +
