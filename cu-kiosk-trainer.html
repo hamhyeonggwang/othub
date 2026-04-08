@@ -838,8 +838,21 @@ body {
 .comp-receipt-notice { font-size: 12px; color: rgba(255,255,255,.55); text-align: center; }
 
 .comp-btn-row { display: flex; gap: 10px; width: 100%; }
-.kiosk-save-row { display: flex; gap: 10px; width: 100%; margin-bottom: 8px; flex-wrap: wrap; }
-.kiosk-save-row .comp-receipt-btn { flex: 1; min-width: 120px; }
+.tp-btn-save-result {
+  margin-top: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tp-btn-save-result:hover { background: rgba(255, 255, 255, 0.18); }
 .comp-receipt-btn {
   flex: 1; padding: 14px;
   background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.3);
@@ -1167,6 +1180,7 @@ body {
           <div class="stat-card"><div class="stat-num" id="st-correct">0</div><div class="stat-lbl">정답</div></div>
           <div class="stat-card"><div class="stat-num" id="st-pct">0%</div><div class="stat-lbl">정확도</div></div>
         </div>
+        <button type="button" class="tp-btn-save-result" onclick="kioskSaveResultScreen('cu', showToast)">📷 결과 화면 저장</button>
       </div>
 
     </div><!-- /tp-body -->
@@ -1897,6 +1911,7 @@ function renderComplete() {
   const finalTotal = state.cart.reduce((s,i)=>s+i.price*i.qty,0) - discount;
   const payOpt = PAY_OPTIONS[state.payMethod] || PAY_OPTIONS[0];
   state.stats.trials++;
+  state._lastOrderNo = String(Math.floor(Math.random() * 9000000) + 1000000);
   updateStats();
 
   return `
@@ -1905,7 +1920,7 @@ function renderComplete() {
         <div class="comp-check">✅</div>
         <div class="comp-title">결제 완료!</div>
         <div class="comp-sub">${payOpt.name}으로 결제되었습니다</div>
-        <div class="comp-receipt" id="kiosk-receipt-capture">
+        <div class="comp-receipt">
           <div class="comp-receipt-title">영수증</div>
           ${state.cart.map(item=>`
             <div class="comp-item-row">
@@ -1920,15 +1935,39 @@ function renderComplete() {
         </div>
         <div class="comp-receipt-notice">영수증이 필요하시면 아래 버튼을 눌러주세요<br>(3~4초 내로 화면이 변경됩니다)</div>
       </div>
-      <div class="kiosk-save-row">
-        <button type="button" class="comp-receipt-btn" onclick="kioskSaveImage('#kiosk-result-capture','cu-result',showToast)">📷 결과 화면 저장</button>
-        <button type="button" class="comp-receipt-btn" onclick="kioskSaveImage('#kiosk-receipt-capture','cu-receipt',showToast)">🧾 영수증 저장</button>
-      </div>
       <div class="comp-btn-row">
-        <button class="comp-receipt-btn" onclick="showToast('🖨️ 영수증 출력 중...')">영수증 출력</button>
+        <button class="comp-receipt-btn" onclick="cuOpenReceiptPrint()">영수증 출력</button>
         <button class="comp-home-btn" onclick="resetAll()">🔄 처음으로</button>
       </div>
     </div>`;
+}
+
+function cuOpenReceiptPrint() {
+  if (state.screen !== 'complete') {
+    showToast('완료 화면에서 출력해 주세요');
+    return;
+  }
+  const discount = (state.membershipAction === 'use' && state._usePoints) ? state._usePoints : 0;
+  const finalTotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0) - discount;
+  const items = state.cart.map(function (i) {
+    return {
+      name: (i.emoji ? i.emoji + ' ' : '') + i.name,
+      unitPrice: i.price,
+      qty: i.qty,
+      lineTotal: i.price * i.qty
+    };
+  });
+  if (discount > 0) {
+    items.push({ name: '포인트 사용', unitPrice: 0, qty: '-', lineTotal: -discount });
+  }
+  openKioskReceiptModal({
+    toast: showToast,
+    filenameBase: 'cu-receipt',
+    orderNo: state._lastOrderNo,
+    purchaseDate: new Date(),
+    items: items,
+    total: finalTotal
+  });
 }
 
 // =============================================
