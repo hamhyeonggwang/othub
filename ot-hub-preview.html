@@ -664,7 +664,7 @@ img{display:block;max-width:100%;}
       <span class="l-copy">© 2024 OT Hub. By OTs, For Everyone.</span>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <div class="dev-pill">
-          <span class="dev-name">함형광</span>
+          <span class="dev-name" title="사이트 제작자">제작 · 함형광</span>
           <div class="dev-dot"></div>
           <a class="insta-a" href="https://instagram.com/starlight_daddy" target="_blank" rel="noopener">
             <div class="insta-ico"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#fff" stroke="none"/></svg></div>
@@ -923,9 +923,9 @@ img{display:block;max-width:100%;}
     </div>
     <div style="flex:1;overflow-y:auto;" id="dNav"></div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:rgba(45,212,191,.08);">
-        <div class="av" style="width:34px;height:34px;font-size:14px;">함</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--navy);">함형광</div><div style="font-size:11px;color:var(--gray);">작업치료사</div></div>
+      <div id="authSideCard" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:rgba(148,163,184,.12);">
+        <div class="av" id="authSideAv" style="width:34px;height:34px;font-size:14px;background:rgba(100,116,139,.2);color:var(--navy);">?</div>
+        <div><div id="authSideName" style="font-size:13px;font-weight:700;color:var(--navy);">게스트</div><div id="authSideRole" style="font-size:11px;color:var(--gray);">로그인하면 댓글 등 이용 가능</div></div>
       </div>
     </div>
   </div>
@@ -944,7 +944,7 @@ img{display:block;max-width:100%;}
         <button class="ico-btn">
           <svg width="20" height="20" fill="none" stroke="var(--navy)" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 17H9m6 0a3 3 0 01-6 0m6 0H5.7A2.7 2.7 0 013 14.3V14a2 2 0 01.6-1.4L5 11.2V9a7 7 0 1114 0v2.2l1.4 1.4A2 2 0 0121 14v.3A2.7 2.7 0 0118.3 17H15z"/></svg>
         </button>
-        <div class="av">함</div>
+        <div class="av" id="authTopAv" title="계정" style="background:rgba(100,116,139,.2);color:var(--navy);">?</div>
       </div>
     </div>
 
@@ -1348,18 +1348,22 @@ function syncCatChip(t){
 
 function buildFeed(){
   const feed=document.getElementById('aFeed');
-  if(tab==='home')      {feed.innerHTML=homeHTML();return;}
-  if(tab==='games'||tab==='webapps'){feed.innerHTML=webappsHTML();return;}
-  if(tab==='tools')     {feed.innerHTML=toolsHTML();return;}
-  if(tab==='explore')   {feed.innerHTML=exploreHTML();return;}
-  if(tab==='videos'){feed.innerHTML=videosHTML();return;}
-  if(tab==='siteinfo'){feed.innerHTML=siteinfoHTML();return;}
-  if(tab==='info'){feed.innerHTML=infoHTML();return;}
-  if(tab==='community') {feed.innerHTML=lockedHTML('💬','커뮤니티 (준비중)','작업치료사들과 케이스 토론, Q&A, 정보 공유를 해보세요.');return;}
-  if(tab==='chatbot')   {openChatbot();return;}
-  if(tab==='bookmark')  {feed.innerHTML=lockedHTML('🔖','북마크 (준비중)','콘텐츠를 저장하고 언제든지 다시 볼 수 있어요.');return;}
-  if(tab==='profile')   {feed.innerHTML=profileHTML();return;}
-  feed.innerHTML=homeHTML();
+  try {
+    if(tab==='home')      {feed.innerHTML=homeHTML();return;}
+    if(tab==='games'||tab==='webapps'){feed.innerHTML=webappsHTML();return;}
+    if(tab==='tools')     {feed.innerHTML=toolsHTML();return;}
+    if(tab==='explore')   {feed.innerHTML=exploreHTML();return;}
+    if(tab==='videos'){feed.innerHTML=videosHTML();return;}
+    if(tab==='siteinfo'){feed.innerHTML=siteinfoHTML();return;}
+    if(tab==='info'){feed.innerHTML=infoHTML();return;}
+    if(tab==='community') {feed.innerHTML=lockedHTML('💬','커뮤니티 (준비중)','작업치료사들과 케이스 토론, Q&A, 정보 공유를 해보세요.');return;}
+    if(tab==='chatbot')   {openChatbot();return;}
+    if(tab==='bookmark')  {feed.innerHTML=lockedHTML('🔖','북마크 (준비중)','콘텐츠를 저장하고 언제든지 다시 볼 수 있어요.');return;}
+    if(tab==='profile')   {feed.innerHTML=profileHTML();return;}
+    feed.innerHTML=homeHTML();
+  } finally {
+    refreshAuthUI();
+  }
 }
 
 /* ── 정보 (외부 사이트) ── */
@@ -1441,13 +1445,13 @@ function toolsHTML(){return`
 function profileHTML(){return`
   <div style="padding:8px 0 20px;">
     <div style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:20px;box-shadow:0 2px 12px rgba(26,43,76,.08);margin-bottom:16px;">
-      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#2DD4BF,#1A8A7A);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0;">함</div>
-      <div><div style="font-size:17px;font-weight:700;color:var(--navy);">함형광</div>
-      <div style="font-size:13px;color:var(--gray);margin-top:2px;">작업치료사 · 학령기치료팀장</div>
-      <div style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:3px 9px;border-radius:6px;background:rgba(45,212,191,.12);font-size:11px;font-weight:700;color:#1A8A7A;">✓ 인증 완료</div></div>
+      <div id="profileAv" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#94a3b8,#64748b);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0;">?</div>
+      <div><div id="profileName" style="font-size:17px;font-weight:700;color:var(--navy);">게스트</div>
+      <div id="profileSub" style="font-size:13px;color:var(--gray);margin-top:2px;">로그인하지 않은 상태입니다.</div>
+      <div id="profileBadge" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:3px 9px;border-radius:6px;background:rgba(100,116,139,.12);font-size:11px;font-weight:700;color:#64748b;">댓글·좋아요는 로그인 후</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
-      ${[['시청',42],['저장',18],['게임',7]].map(([l,n])=>`<div style="background:#fff;border-radius:14px;padding:16px 12px;text-align:center;box-shadow:0 2px 10px rgba(26,43,76,.07);"><div style="font-size:22px;font-weight:700;color:var(--navy);">${n}</div><div style="font-size:12px;color:var(--gray);margin-top:2px;">${l}</div></div>`).join('')}
+    <div id="profileStats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+      ${[['시청','—'],['저장','—'],['게임','—']].map(([l,n])=>`<div style="background:#fff;border-radius:14px;padding:16px 12px;text-align:center;box-shadow:0 2px 10px rgba(26,43,76,.07);"><div style="font-size:22px;font-weight:700;color:var(--navy);">${n}</div><div style="font-size:12px;color:var(--gray);margin-top:2px;">${l}</div></div>`).join('')}
     </div>
     <div style="background:#fff;border-radius:16px;padding:6px 0;box-shadow:0 2px 12px rgba(26,43,76,.07);">
       ${[['🔔','알림 설정'],['🌙','다크 모드'],['🔒','계정 보안'],['📤','로그아웃']].map(([ic,lb],i)=>`
@@ -1905,9 +1909,78 @@ function handleResize(){
 }
 window.addEventListener('resize',handleResize);
 
+function otHubDisplayFromSession(session){
+  const u=session&&session.user;
+  if(!u){
+    return{
+      av:'?',
+      name:'게스트',
+      sideRole:'로그인하면 댓글 등 이용 가능',
+      sub:'로그인하지 않은 상태입니다.',
+      badge:'댓글·좋아요는 로그인 후',
+      badgeBg:'rgba(100,116,139,.12)',
+      badgeColor:'#64748b',
+      avGrad:'linear-gradient(135deg,#94a3b8,#64748b)',
+      sideCardBg:'rgba(148,163,184,.12)',
+    };
+  }
+  const meta=u.user_metadata||{};
+  const name=meta.full_name||meta.name||(u.email?u.email.split('@')[0]:'')||'사용자';
+  const letter=(name&&name.charAt(0))||'?';
+  return{
+    av:letter,
+    name:name,
+    sideRole:u.email||'로그인됨',
+    sub:u.email||'',
+    badge:'✓ 로그인됨',
+    badgeBg:'rgba(45,212,191,.12)',
+    badgeColor:'#1A8A7A',
+    avGrad:'linear-gradient(135deg,#2DD4BF,#1A8A7A)',
+    sideCardBg:'rgba(45,212,191,.08)',
+  };
+}
+
+function refreshAuthUI(){
+  const eng=window.OTHubEngagement;
+  if(!eng||!eng.getSession){return;}
+  eng.getSession().then(function(session){
+    const d=otHubDisplayFromSession(session);
+    const setText=function(id,t){const el=document.getElementById(id);if(el)el.textContent=t;};
+    setText('authSideAv',d.av);
+    setText('authTopAv',d.av);
+    setText('authSideName',d.name);
+    setText('authSideRole',d.sideRole);
+    const sideCard=document.getElementById('authSideCard');
+    if(sideCard)sideCard.style.background=d.sideCardBg;
+    ['authSideAv','authTopAv'].forEach(function(id){
+      const el=document.getElementById(id);
+      if(!el)return;
+      el.style.background=session?d.avGrad:'rgba(100,116,139,.2)';
+      el.style.color=session?'#fff':'var(--navy)';
+    });
+    const pav=document.getElementById('profileAv');
+    if(pav){
+      pav.textContent=d.av;
+      pav.style.background=d.avGrad;
+    }
+    setText('profileName',d.name);
+    setText('profileSub',d.sub);
+    const pb=document.getElementById('profileBadge');
+    if(pb){
+      pb.textContent=session?d.badge:'댓글·좋아요는 로그인 후';
+      pb.style.background=session?d.badgeBg:'rgba(100,116,139,.12)';
+      pb.style.color=session?d.badgeColor:'#64748b';
+    }
+  }).catch(function(){});
+}
+
 /* ── INIT ── */
 buildStrip();
 if(window.OTHubEngagement&&window.OTHubEngagement.attachStrip&&!window.OT_HUB_HIDE_ENGAGEMENT)window.OTHubEngagement.attachStrip();
+refreshAuthUI();
+if(window.OTHubEngagement&&window.OTHubEngagement.onAuthStateChange){
+  window.OTHubEngagement.onAuthStateChange(function(){refreshAuthUI();if(tab==='profile')buildFeed();});
+}
 </script>
 </body>
 </html>
