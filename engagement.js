@@ -346,9 +346,27 @@
     }
   }
 
+  function getSession() {
+    var sb = getClient();
+    if (!sb) return Promise.resolve(null);
+    return sb.auth.getSession().then(function (r) {
+      return (r.data && r.data.session) || null;
+    });
+  }
+
+  function onAuthStateChange(cb) {
+    var sb = getClient();
+    if (!sb) return;
+    sb.auth.onAuthStateChange(function (_event, session) {
+      cb(session || null);
+    });
+  }
+
   window.OTHubEngagement = {
     attachStrip: bindStrip,
     refreshStripCounts: refreshStripCounts,
+    getSession: getSession,
+    onAuthStateChange: onAuthStateChange,
   };
 
   if (document.readyState === 'loading') {
