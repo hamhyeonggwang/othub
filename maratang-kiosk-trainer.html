@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>마라탕 키오스크 훈련</title>
+<script src="kiosk-image-save.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
@@ -364,6 +365,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#2a1a1a;min-height:100vh;d
 .crr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:12px;color:rgba(255,255,255,.8);}
 .crr:last-child{border-bottom:none;}
 .comp-btns{display:flex;gap:10px;width:100%;}
+.kiosk-save-row{display:flex;gap:10px;width:100%;margin-bottom:8px;flex-wrap:wrap;}
+.kiosk-save-row .comp-rec-btn{flex:1;min-width:120px;}
 .comp-rec-btn{flex:1;padding:12px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
 .comp-home-btn{flex:2;padding:12px;background:white;border:none;border-radius:12px;color:var(--red);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:900;cursor:pointer;}
 
@@ -947,26 +950,32 @@ function r_complete(b){
   updateStats();
 
   b.innerHTML=`<div class="sc-comp">
-    <div class="comp-circle">${isOver?'😅':'🎉'}</div>
-    <div class="comp-t">${isOver?'주문 완료!':'예산 달성! 🎉'}</div>
-    <div class="comp-s">${isOver?'예산을 초과했지만 맛있게 드세요!':'예산 안에서 성공적으로 주문했어요!'}</div>
-    <div class="comp-num-box">
-      <div class="comp-num-l">대기 번호</div>
-      <div class="comp-num-n">${orderNum}</div>
-    </div>
-    <div class="comp-budget-box ${isOver?'over':'ok'}">
-      <div class="cbb-title">💰 예산 결과</div>
-      <div class="cbb-row"><span>설정 예산</span><span>${budget.toLocaleString()}원</span></div>
-      <div class="cbb-row"><span>실제 금액</span><span>${total.toLocaleString()}원</span></div>
-      <div class="cbb-total">
-        <span class="cbb-total-l">${isOver?'초과 금액':'절약 금액'}</span>
-        <span class="cbb-total-n ${isOver?'over':'ok'}">${isOver?'+':'−'}${diff.toLocaleString()}원</span>
+    <div id="kiosk-result-capture">
+      <div class="comp-circle">${isOver?'😅':'🎉'}</div>
+      <div class="comp-t">${isOver?'주문 완료!':'예산 달성! 🎉'}</div>
+      <div class="comp-s">${isOver?'예산을 초과했지만 맛있게 드세요!':'예산 안에서 성공적으로 주문했어요!'}</div>
+      <div class="comp-num-box">
+        <div class="comp-num-l">대기 번호</div>
+        <div class="comp-num-n">${orderNum}</div>
+      </div>
+      <div class="comp-budget-box ${isOver?'over':'ok'}">
+        <div class="cbb-title">💰 예산 결과</div>
+        <div class="cbb-row"><span>설정 예산</span><span>${budget.toLocaleString()}원</span></div>
+        <div class="cbb-row"><span>실제 금액</span><span>${total.toLocaleString()}원</span></div>
+        <div class="cbb-total">
+          <span class="cbb-total-l">${isOver?'초과 금액':'절약 금액'}</span>
+          <span class="cbb-total-n ${isOver?'over':'ok'}">${isOver?'+':'−'}${diff.toLocaleString()}원</span>
+        </div>
+      </div>
+      <div class="comp-receipt" id="kiosk-receipt-capture">
+        <div class="crt">주문 내역</div>
+        ${S.basket.map(i=>`<div class="crr"><span>${i.emoji} ${i.name} ×${i.qty}</span><span>${(i.unitPrice*i.qty).toLocaleString()}원</span></div>`).join('')}
+        ${S.extras.map(id=>{const e=EXTRAS.find(x=>x.id===id);return e?`<div class="crr"><span>${e.emoji} ${e.name}</span><span>${e.price.toLocaleString()}원</span></div>`:''}).join('')}
       </div>
     </div>
-    <div class="comp-receipt">
-      <div class="crt">주문 내역</div>
-      ${S.basket.map(i=>`<div class="crr"><span>${i.emoji} ${i.name} ×${i.qty}</span><span>${(i.unitPrice*i.qty).toLocaleString()}원</span></div>`).join('')}
-      ${S.extras.map(id=>{const e=EXTRAS.find(x=>x.id===id);return e?`<div class="crr"><span>${e.emoji} ${e.name}</span><span>${e.price.toLocaleString()}원</span></div>`:''}).join('')}
+    <div class="kiosk-save-row">
+      <button type="button" class="comp-rec-btn" onclick="kioskSaveImage('#kiosk-result-capture','maratang-result',showToast)">📷 결과 화면 저장</button>
+      <button type="button" class="comp-rec-btn" onclick="kioskSaveImage('#kiosk-receipt-capture','maratang-receipt',showToast)">🧾 영수증 저장</button>
     </div>
     <div class="comp-btns">
       <button class="comp-rec-btn" onclick="showToast('🖨️ 영수증 출력 중...')">영수증 출력</button>
@@ -1042,7 +1051,5 @@ function updateStats(){
 setMission();
 render();
 </script>
-<script src="game-audio.js"></script>
-<script>if(window.GameAudio)GameAudio.bindUiTap(document.body);</script>
 </body>
 </html>
