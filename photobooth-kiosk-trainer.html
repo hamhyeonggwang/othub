@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>하루필름 키오스크 훈련</title>
+<script src="kiosk-image-save.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
@@ -245,6 +246,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#1a0a14;min-height:100vh;d
 .prb-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:auto;}
 .prb-badge.ok{background:rgba(167,243,208,.3);color:#a7f3d0;}
 .comp-btns{display:flex;gap:10px;width:100%;}
+.kiosk-save-row{display:flex;gap:10px;width:100%;margin:4px 0 8px;flex-wrap:wrap;}
+.kiosk-save-row .comp-rec-btn{flex:1;min-width:120px;}
 .comp-rec-btn{flex:1;padding:12px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
 .comp-home-btn{flex:2;padding:12px;background:white;border:none;border-radius:12px;color:var(--pink);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:900;cursor:pointer;}
 
@@ -753,17 +756,23 @@ function r_complete(b){
     </div>`).join('');
 
   b.innerHTML=`<div class="sc-comp">
-    <div class="comp-circle">🎉</div>
-    <div class="comp-t">인화 완료!</div>
-    <div class="comp-s">사진이 완성됐어요 🖨️</div>
-    <div class="result-strip-wrap">
-      <div class="result-frames">${framesHTML}</div>
-      <div class="result-brand">HARU FILM</div>
+    <div id="kiosk-result-capture">
+      <div class="comp-circle">🎉</div>
+      <div class="comp-t">인화 완료!</div>
+      <div class="comp-s">사진이 완성됐어요 🖨️</div>
+      <div class="result-strip-wrap" id="kiosk-receipt-capture">
+        <div class="result-frames">${framesHTML}</div>
+        <div class="result-brand">HARU FILM</div>
+      </div>
+      <div class="pose-result-box">
+        <div class="prb-title">자세 수행 결과</div>
+        ${poseRows}
+      </div>
     </div>
     <button class="download-btn" onclick="downloadStrip()">📥 사진 저장하기</button>
-    <div class="pose-result-box">
-      <div class="prb-title">자세 수행 결과</div>
-      ${poseRows}
+    <div class="kiosk-save-row">
+      <button type="button" class="comp-rec-btn" onclick="kioskSaveImage('#kiosk-result-capture','harufilm-result',showToast)">📷 결과 화면 저장</button>
+      <button type="button" class="comp-rec-btn" onclick="kioskSaveImage('#kiosk-receipt-capture','harufilm-strip',showToast)">🧾 인화 미리보기 저장</button>
     </div>
     <div class="comp-btns">
       <button class="comp-rec-btn" onclick="showToast('🖨️ 추가 인화 중...')">추가 인화</button>
@@ -827,7 +836,5 @@ function revealMs(){const t=document.getElementById('wmtask');const r=document.g
 function updateStats(){document.getElementById('st-t').textContent=S.stats.trials;document.getElementById('st-c').textContent=S.stats.correct;const p=S.stats.trials>0?Math.round(S.stats.correct/S.stats.trials*100):0;document.getElementById('st-p').textContent=p+'%';}
 setMission();render();
 </script>
-<script src="game-audio.js"></script>
-<script>if(window.GameAudio)GameAudio.bindUiTap(document.body);</script>
 </body>
 </html>
