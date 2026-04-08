@@ -6,6 +6,7 @@
 <title>CU 셀프계산대 훈련</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="kiosk-image-save.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 /* =========================================
@@ -837,6 +838,8 @@ body {
 .comp-receipt-notice { font-size: 12px; color: rgba(255,255,255,.55); text-align: center; }
 
 .comp-btn-row { display: flex; gap: 10px; width: 100%; }
+.kiosk-save-row { display: flex; gap: 10px; width: 100%; margin-bottom: 8px; flex-wrap: wrap; }
+.kiosk-save-row .comp-receipt-btn { flex: 1; min-width: 120px; }
 .comp-receipt-btn {
   flex: 1; padding: 14px;
   background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.3);
@@ -1898,23 +1901,29 @@ function renderComplete() {
 
   return `
     <div class="screen-complete">
-      <div class="comp-check">✅</div>
-      <div class="comp-title">결제 완료!</div>
-      <div class="comp-sub">${payOpt.name}으로 결제되었습니다</div>
-      <div class="comp-receipt">
-        <div class="comp-receipt-title">영수증</div>
-        ${state.cart.map(item=>`
-          <div class="comp-item-row">
-            <span>${item.emoji} ${item.name} × ${item.qty}</span>
-            <span>${(item.price*item.qty).toLocaleString()}원</span>
-          </div>`).join('')}
-        ${discount>0?`<div class="comp-item-row"><span>포인트 사용</span><span style="color:#10B981">-${discount.toLocaleString()}원</span></div>`:''}
-        <div class="comp-total-row">
-          <span class="comp-total-label">합계</span>
-          <span class="comp-total-price">${finalTotal.toLocaleString()}원</span>
+      <div id="kiosk-result-capture">
+        <div class="comp-check">✅</div>
+        <div class="comp-title">결제 완료!</div>
+        <div class="comp-sub">${payOpt.name}으로 결제되었습니다</div>
+        <div class="comp-receipt" id="kiosk-receipt-capture">
+          <div class="comp-receipt-title">영수증</div>
+          ${state.cart.map(item=>`
+            <div class="comp-item-row">
+              <span>${item.emoji} ${item.name} × ${item.qty}</span>
+              <span>${(item.price*item.qty).toLocaleString()}원</span>
+            </div>`).join('')}
+          ${discount>0?`<div class="comp-item-row"><span>포인트 사용</span><span style="color:#10B981">-${discount.toLocaleString()}원</span></div>`:''}
+          <div class="comp-total-row">
+            <span class="comp-total-label">합계</span>
+            <span class="comp-total-price">${finalTotal.toLocaleString()}원</span>
+          </div>
         </div>
+        <div class="comp-receipt-notice">영수증이 필요하시면 아래 버튼을 눌러주세요<br>(3~4초 내로 화면이 변경됩니다)</div>
       </div>
-      <div class="comp-receipt-notice">영수증이 필요하시면 아래 버튼을 눌러주세요<br>(3~4초 내로 화면이 변경됩니다)</div>
+      <div class="kiosk-save-row">
+        <button type="button" class="comp-receipt-btn" onclick="kioskSaveImage('#kiosk-result-capture','cu-result',showToast)">📷 결과 화면 저장</button>
+        <button type="button" class="comp-receipt-btn" onclick="kioskSaveImage('#kiosk-receipt-capture','cu-receipt',showToast)">🧾 영수증 저장</button>
+      </div>
       <div class="comp-btn-row">
         <button class="comp-receipt-btn" onclick="showToast('🖨️ 영수증 출력 중...')">영수증 출력</button>
         <button class="comp-home-btn" onclick="resetAll()">🔄 처음으로</button>
@@ -2154,7 +2163,5 @@ function buildBarcodePage() {
 setMission();
 render();
 </script>
-<script src="game-audio.js"></script>
-<script>if(window.GameAudio)GameAudio.bindUiTap(document.body);</script>
 </body>
 </html>
