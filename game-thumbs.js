@@ -74,6 +74,18 @@
     '</svg>'
   );
 
+  T.homeplusKiosk = svgDataUri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
+      '<defs><linearGradient id="hp" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#EE1C23"/><stop offset="100%" stop-color="#0057A8"/></linearGradient></defs>' +
+      '<rect width="400" height="300" fill="url(#hp)"/>' +
+      '<rect x="64" y="56" width="272" height="188" rx="18" fill="rgba(255,255,255,.95)" stroke="rgba(0,0,0,.08)"/>' +
+      '<text x="200" y="108" text-anchor="middle" font-family="system-ui,sans-serif" font-size="26" font-weight="900" fill="#EE1C23">홈플러스</text>' +
+      '<text x="200" y="142" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#0057A8">푸드코트 키오스크</text>' +
+      '<text x="200" y="178" text-anchor="middle" font-size="28">🍱</text>' +
+      '<text x="200" y="218" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#333">주문 · 픽업존 연습</text>' +
+    '</svg>'
+  );
+
   T.balloonAdventure = svgDataUri(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
       '<defs>' +
