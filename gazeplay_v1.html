@@ -1613,6 +1613,20 @@ const CONSTELLATIONS = [
   [[.50,.08],[.20,.38],[.50,.35],[.80,.38],[.50,.62],[.50,.90]],
 ];
 
+/** 템플릿 앞부분만 쓰면(별 개수 적을 때) 왼쪽·중앙에만 몰림 → 인덱스를 간격 두고 골라 화면 전체 활용 */
+function pickConstellationSubset(tmpl, count) {
+  const n = tmpl.length;
+  if (count >= n) return tmpl.slice();
+  if (count <= 0) return [];
+  if (count === 1) return [tmpl[Math.floor(n / 2)]];
+  const out = [];
+  for (let k = 0; k < count; k++) {
+    const idx = Math.round((k / (count - 1)) * (n - 1));
+    out.push(tmpl[idx]);
+  }
+  return out;
+}
+
 // 별자리 최소 별 간격 보장 함수
 function enforceMinDist(stars, minPx) {
   const MAX_ITER = 60;
@@ -1697,8 +1711,10 @@ function spawnConstellation() {
   const usableW = W - padX * 2;
   const usableH = H - padYT - padYB;
 
-  constellation = tmpl.slice(0, Math.min(tmpl.length, cfg.count)).map((p, i) => ({
-    x: padX  + p[0] * usableW,
+  const picked = pickConstellationSubset(tmpl, Math.min(tmpl.length, cfg.count));
+  const mirrorX = Math.random() < 0.5;
+  constellation = picked.map((p, i) => ({
+    x: padX  + (mirrorX ? (1 - p[0]) : p[0]) * usableW,
     y: padYT + p[1] * usableH,
     r: cfg.sz, idx: i,
     state: 'waiting', dwell: 0, twinkle: Math.random() * Math.PI * 2,
