@@ -598,16 +598,6 @@ input:checked + .th-sw-track::before{transform:translateX(16px);background:#38bd
   <div class="hint-txt">웹캠이 연결된 환경에서 사용하세요 · 손 동작으로 조작</div>
 </div>
 
-<!-- ════════════════ CALIBRATION ════════════════ -->
-<div class="screen" id="screen-calib">
-  <div class="calib-h">👁 시선 보정</div>
-  <div class="calib-desc">빛나는 점을 차례로 바라보세요. 클릭하거나 잠깐 응시하면 넘어갑니다.</div>
-  <canvas id="calibCanvas" width="760" height="480"></canvas>
-  <div class="calib-dots" id="calibDots"></div>
-  <div style="font-size:13px;color:var(--muted)" id="calibHint">1번 포인트를 바라보세요</div>
-  <button class="skip-btn" onclick="skipCalib()">건너뛰기 →</button>
-</div>
-
 <!-- ════════════════ TUTORIAL ════════════════ -->
 <div class="screen" id="screen-tut">
   <div class="tut-hdr">
@@ -864,51 +854,125 @@ input:checked + .th-sw-track::before{transform:translateX(16px);background:#38bd
       </div>
     </div>
 
-    <!-- ⑤ 시선 추적 (치료사 확인용) -->
+    <!-- ⑤ 시선 추적 -->
     <div class="th-section">
       <div class="th-sec-hdr open" onclick="thToggleSec(this)">
         <div class="th-sec-label" style="color:#f87171">👁 시선 추적</div>
         <div class="th-sec-arrow open">▼</div>
       </div>
       <div class="th-sec-body open">
-        <div class="th-row">
-          <div class="th-label">시선 점 표시</div>
-          <label class="th-toggle-sw">
-            <input type="checkbox" id="th-gaze-dot" onchange="thSetGazeDot(this.checked)">
-            <div class="th-sw-track"></div>
-          </label>
-        </div>
-        <div class="th-row">
-          <div class="th-label">히트맵 오버레이</div>
-          <label class="th-toggle-sw">
-            <input type="checkbox" id="th-heatmap" onchange="thSetHeatmap(this.checked)">
-            <div class="th-sw-track"></div>
-          </label>
-        </div>
-        <div class="th-row">
-          <div class="th-label">안구이동 그래프</div>
-          <label class="th-toggle-sw">
-            <input type="checkbox" id="th-eyegraph" onchange="thSetEyeGraph(this.checked)">
-            <div class="th-sw-track"></div>
-          </label>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:2px">
-          <button class="th-btn ghost" style="flex:1;font-size:11px" onclick="thClearHeatmap()">히트맵 초기화</button>
-          <button class="th-btn ghost" style="flex:1;font-size:11px" onclick="thClearGraph()">그래프 초기화</button>
-        </div>
-        <!-- 미니 현재 시선 좌표 -->
-        <div class="live-stat" style="margin-top:4px">
-          <div class="live-stat-lbl">👁 현재 시선 위치</div>
-          <div class="live-stat-val" id="lv-gaze" style="color:#f87171;font-size:13px">—</div>
-        </div>
+
+        <!-- 상태 표시 -->
         <div class="live-stat">
-          <div class="live-stat-lbl">🔬 홍채 추적 상태</div>
+          <div class="live-stat-lbl">🔬 홍채 추적</div>
           <div class="live-stat-val" id="lv-iris" style="color:#64748b;font-size:12px">대기중</div>
         </div>
-        <button class="th-btn ghost" style="width:100%;font-size:11px;margin-top:4px"
-          onclick="irisCalibReset();showToast('시선 캘리브 초기화됨')">
-          🔄 시선 캘리브레이션 재설정
-        </button>
+        <div class="live-stat">
+          <div class="live-stat-lbl">👁 현재 시선</div>
+          <div class="live-stat-val" id="lv-gaze" style="color:#f87171;font-size:12px">—</div>
+        </div>
+
+        <!-- 캘리브레이션 실행 -->
+        <div style="background:rgba(253,230,138,.06);border:1px solid rgba(253,230,138,.2);border-radius:10px;padding:10px 12px;margin-top:2px">
+          <div style="font-size:11px;color:#fde68a;font-weight:700;margin-bottom:6px">📌 시선 캘리브레이션</div>
+          <div style="font-size:10px;color:#475569;margin-bottom:8px;line-height:1.6">
+            9개 점을 순서대로 응시한 뒤 탭/클릭.<br>
+            게임 화면 위에 오버레이로 표시됩니다.
+          </div>
+          <div class="th-btn-row">
+            <button class="th-btn primary" style="flex:1" onclick="startIrisCalib()">▶ 캘리브 시작</button>
+            <button class="th-btn danger"  style="flex:0 0 auto" onclick="irisCalibReset();showToast('초기화됨')">초기화</button>
+          </div>
+        </div>
+
+        <!-- 시선 범위 미세 조정 -->
+        <div style="font-size:10px;color:#64748b;font-weight:700;letter-spacing:1px;margin-top:6px;margin-bottom:4px">수동 미세 조정</div>
+
+        <!-- 좌우 오프셋 -->
+        <div>
+          <div class="th-row" style="margin-bottom:4px">
+            <div class="th-label" style="font-size:11px">좌우 오프셋</div>
+            <div class="th-val" id="iris-offx-val" style="font-size:11px">0.000</div>
+          </div>
+          <input type="range" class="th-slider" id="iris-offx"
+            min="-0.1" max="0.1" step="0.002" value="0"
+            oninput="thSetIrisOffX(this.value);thUpdateSlider('iris-offx',parseFloat(this.value),-0.1,0.1)">
+        </div>
+
+        <!-- 상하 오프셋 -->
+        <div>
+          <div class="th-row" style="margin-bottom:4px">
+            <div class="th-label" style="font-size:11px">상하 오프셋</div>
+            <div class="th-val" id="iris-offy-val" style="font-size:11px">0.000</div>
+          </div>
+          <input type="range" class="th-slider" id="iris-offy"
+            min="-0.1" max="0.1" step="0.002" value="0"
+            oninput="thSetIrisOffY(this.value);thUpdateSlider('iris-offy',parseFloat(this.value),-0.1,0.1)">
+        </div>
+
+        <!-- 가로 범위 스케일 -->
+        <div>
+          <div class="th-row" style="margin-bottom:4px">
+            <div class="th-label" style="font-size:11px">가로 범위</div>
+            <div class="th-val" id="iris-scalex-val" style="font-size:11px">1.0×</div>
+          </div>
+          <input type="range" class="th-slider" id="iris-scalex"
+            min="0.3" max="3.0" step="0.1" value="1"
+            oninput="thSetIrisScaleX(this.value);thUpdateSlider('iris-scalex',parseFloat(this.value),0.3,3.0)">
+        </div>
+
+        <!-- 세로 범위 스케일 -->
+        <div>
+          <div class="th-row" style="margin-bottom:4px">
+            <div class="th-label" style="font-size:11px">세로 범위</div>
+            <div class="th-val" id="iris-scaley-val" style="font-size:11px">1.0×</div>
+          </div>
+          <input type="range" class="th-slider" id="iris-scaley"
+            min="0.3" max="3.0" step="0.1" value="1"
+            oninput="thSetIrisScaleY(this.value);thUpdateSlider('iris-scaley',parseFloat(this.value),0.3,3.0)">
+        </div>
+
+        <!-- 스무딩 -->
+        <div>
+          <div class="th-row" style="margin-bottom:4px">
+            <div class="th-label" style="font-size:11px">스무딩</div>
+            <div class="th-val" id="iris-alpha-val" style="font-size:11px">0.20</div>
+          </div>
+          <input type="range" class="th-slider" id="iris-alpha"
+            min="0.05" max="0.5" step="0.05" value="0.2"
+            oninput="thSetIrisAlpha(this.value);thUpdateSlider('iris-alpha',parseFloat(this.value),0.05,0.5)">
+          <div style="font-size:9px;color:#475569;margin-top:2px">낮을수록 부드럽고 느림 / 높을수록 반응빠름</div>
+        </div>
+
+        <!-- 오버레이 토글 -->
+        <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
+          <div class="th-row">
+            <div class="th-label" style="font-size:11px">시선 점 표시</div>
+            <label class="th-toggle-sw">
+              <input type="checkbox" id="th-gaze-dot" onchange="thSetGazeDot(this.checked)">
+              <div class="th-sw-track"></div>
+            </label>
+          </div>
+          <div class="th-row">
+            <div class="th-label" style="font-size:11px">히트맵</div>
+            <label class="th-toggle-sw">
+              <input type="checkbox" id="th-heatmap" onchange="thSetHeatmap(this.checked)">
+              <div class="th-sw-track"></div>
+            </label>
+          </div>
+          <div class="th-row">
+            <div class="th-label" style="font-size:11px">이동 그래프</div>
+            <label class="th-toggle-sw">
+              <input type="checkbox" id="th-eyegraph" onchange="thSetEyeGraph(this.checked)">
+              <div class="th-sw-track"></div>
+            </label>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button class="th-btn ghost" style="flex:1;font-size:10px" onclick="thClearHeatmap()">히트맵 초기화</button>
+            <button class="th-btn ghost" style="flex:1;font-size:10px" onclick="thClearGraph()">그래프 초기화</button>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1048,70 +1112,77 @@ const G = {
 const GRID = 40;
 
 // ════════════════════════════════════════════
-//  IRIS GAZE ENGINE
-//  FaceMesh refineLandmarks:true 로 홍채 중심 추출
-//  → 눈 코너 대비 상대 위치 → 캘리브레이션 맵으로 화면 좌표 변환
+//  IRIS GAZE ENGINE  v2
+//  실제 홍채 위치 기반 시선 추적
+//  캘리브: 화면 9포인트 응시 시 홍채 범위 측정 → 선형 맵
+//  + 컨트롤러에서 오프셋/스케일 실시간 수동 조정 가능
 // ════════════════════════════════════════════
 
-// 홍채 랜드마크 인덱스 (refineLandmarks:true 필요)
-const IRIS_L = [468, 469, 470, 471, 472]; // 왼쪽 홍채 (카메라 기준 → 화면 기준 오른쪽)
-const IRIS_R = [473, 474, 475, 476, 477]; // 오른쪽 홍채
-// 눈 안쪽/바깥쪽 코너 (eye aspect ratio 계산용)
-const EYE_L_INNER = 133, EYE_L_OUTER = 33,  EYE_L_TOP = 159, EYE_L_BOT = 145;
-const EYE_R_INNER = 362, EYE_R_OUTER = 263, EYE_R_TOP = 386, EYE_R_BOT = 374;
+const IRIS_L = [468, 469, 470, 471, 472];
+const IRIS_R = [473, 474, 475, 476, 477];
 
-// 캘리브레이션 맵: {irisX, irisY} → {screenX, screenY}
-// 선형 보간을 위한 최소자승 계수
-const IRIS_CAL = {
-  active: false,   // 캘리브레이션 완료 여부
-  // 수집 데이터: [{ix, iy, sx, sy}, ...]
-  points: [],
-  // 선형 회귀 계수: screenX = ax*ix + bx*iy + cx, screenY = ay*ix + by*iy + cy
-  ax: 1, bx: 0, cx: 0,
-  ay: 0, by: 1, cy: 0,
-  // 현재 홍채 raw 위치 (정규화 0~1)
+const IRIS = {
+  // 홍채 raw 위치 (정규화 0~1, 미러 보정 후)
   rawX: 0.5, rawY: 0.5,
-  // 스무딩 버퍼
+  // EMA 스무딩
   smoothX: 0.5, smoothY: 0.5,
-  alpha: 0.25,   // EMA 스무딩 계수 (낮을수록 더 부드럽지만 느림)
+  alpha: 0.2,
+
+  // 캘리브레이션 상태
+  calibMode: false,      // 현재 캘리브 수집 중
+  calibPoints: [],       // [{ix,iy,sx,sy}]
+  calibDotIdx: 0,        // 현재 수집 중인 포인트 인덱스
+  calibReady: false,     // 완료 여부
+
+  // 측정된 홍채 이동 범위 (캘리브에서 학습)
+  // screen = (rawIris - offset) / scale * windowSize
+  offsetX: 0.5,   // 중앙 정면 시 iris.x 값
+  offsetY: 0.5,
+  scaleX:  0.04,  // iris x 1단위가 화면 몇 배로 매핑 (기본값)
+  scaleY:  0.04,
+
+  // 컨트롤러 수동 조정값 (기본값에서 ±)
+  manualOffX: 0,   // 시선 좌우 오프셋 조정 (-0.1 ~ +0.1)
+  manualOffY: 0,   // 시선 상하 오프셋 조정
+  manualScaleX: 1, // 시선 범위 가로 스케일 (0.5~3.0)
+  manualScaleY: 1, // 시선 범위 세로 스케일
 };
 
+// 9포인트 캘리브 위치 (화면 비율)
+const CALIB_9 = [
+  [0.1,0.1],[0.5,0.1],[0.9,0.1],
+  [0.1,0.5],[0.5,0.5],[0.9,0.5],
+  [0.1,0.9],[0.5,0.9],[0.9,0.9],
+];
+
 function onFaceResults(res) {
-  if (!res.multiFaceLandmarks || res.multiFaceLandmarks.length === 0) return;
+  if (!res.multiFaceLandmarks || !res.multiFaceLandmarks.length) return;
   const lm = res.multiFaceLandmarks[0];
-  if (lm.length < 478) return; // refineLandmarks 없으면 홍채 없음
+  if (lm.length < 478) return;
 
-  // ── 홍채 중심 계산 (좌우 평균) ──
-  const lc = irisCenter(lm, IRIS_L); // 왼쪽 홍채
-  const rc = irisCenter(lm, IRIS_R); // 오른쪽 홍채
-
-  // 좌우 평균 (미러 반영: x 반전)
+  // ── 홍채 중심 (좌우 평균, x는 미러) ──
+  const lc = irisCenter(lm, IRIS_L);
+  const rc = irisCenter(lm, IRIS_R);
   const rawX = 1 - (lc.x + rc.x) / 2;
   const rawY =     (lc.y + rc.y) / 2;
 
   // EMA 스무딩
-  IRIS_CAL.smoothX += IRIS_CAL.alpha * (rawX - IRIS_CAL.smoothX);
-  IRIS_CAL.smoothY += IRIS_CAL.alpha * (rawY - IRIS_CAL.smoothY);
-  IRIS_CAL.rawX = IRIS_CAL.smoothX;
-  IRIS_CAL.rawY = IRIS_CAL.smoothY;
+  IRIS.smoothX += IRIS.alpha * (rawX - IRIS.smoothX);
+  IRIS.smoothY += IRIS.alpha * (rawY - IRIS.smoothY);
+  IRIS.rawX = IRIS.smoothX;
+  IRIS.rawY = IRIS.smoothY;
 
-  // ── 화면 좌표로 변환 ──
-  let sx, sy;
-  if (IRIS_CAL.active) {
-    // 캘리브레이션 완료: 회귀 모델 사용
-    sx = IRIS_CAL.ax * IRIS_CAL.smoothX + IRIS_CAL.bx * IRIS_CAL.smoothY + IRIS_CAL.cx;
-    sy = IRIS_CAL.ay * IRIS_CAL.smoothX + IRIS_CAL.by * IRIS_CAL.smoothY + IRIS_CAL.cy;
-  } else {
-    // 미캘리브레이션: 단순 선형 스케일 (대략적)
-    sx = IRIS_CAL.smoothX * window.innerWidth;
-    sy = IRIS_CAL.smoothY * window.innerHeight;
-  }
+  // ── 화면 좌표 변환 ──
+  // (iris - offset - manualOff) / (scale * manualScale) → 정규화 → 픽셀
+  const nx = ((IRIS.rawX - IRIS.offsetX - IRIS.manualOffX)
+              / (IRIS.scaleX * IRIS.manualScaleX)) + 0.5;
+  const ny = ((IRIS.rawY - IRIS.offsetY - IRIS.manualOffY)
+              / (IRIS.scaleY * IRIS.manualScaleY)) + 0.5;
 
-  // G.gazeX/Y 업데이트 (iris 기반)
-  G.gazeX = Math.max(0, Math.min(window.innerWidth,  sx));
-  G.gazeY = Math.max(0, Math.min(window.innerHeight, sy));
+  G.gazeX = Math.max(0, Math.min(window.innerWidth,  nx * window.innerWidth));
+  G.gazeY = Math.max(0, Math.min(window.innerHeight, ny * window.innerHeight));
 
-  // scan grid 업데이트
+  // scan grid
   if (G.screen === 'game') {
     const gx = Math.floor(G.gazeX / GRID), gy = Math.floor(G.gazeY / GRID);
     if (G.scanGrid[gy]?.[gx] !== undefined)
@@ -1125,91 +1196,216 @@ function irisCenter(lm, indices) {
   return { x: x / indices.length, y: y / indices.length };
 }
 
-// 캘리브레이션 데이터 포인트 수집 (calibration 화면에서 호출)
-function irisCalibAddPoint(screenX, screenY) {
-  if (!mpFaceMesh) return;
-  IRIS_CAL.points.push({
-    ix: IRIS_CAL.rawX,
-    iy: IRIS_CAL.rawY,
-    sx: screenX / window.innerWidth,
-    sy: screenY / window.innerHeight,
-  });
-  console.log(`[Iris] 캘리브 포인트 추가: iris(${IRIS_CAL.rawX.toFixed(3)}, ${IRIS_CAL.rawY.toFixed(3)}) → screen(${screenX}, ${screenY})`);
+// ── 캘리브레이션 시작 ──
+// 컨트롤러에서 호출 → 게임 화면 위에 9포인트 오버레이 표시
+let calibOverlay = null;
+let calibAnimId  = null;
+
+function startIrisCalib() {
+  if (!mpFaceMesh) { showToast('⚠️ FaceMesh 미연결 — 시선 추적 불가'); return; }
+  IRIS.calibMode   = true;
+  IRIS.calibPoints = [];
+  IRIS.calibDotIdx = 0;
+  IRIS.calibReady  = false;
+
+  // 오버레이 캔버스 생성
+  if (!calibOverlay) {
+    calibOverlay = document.createElement('canvas');
+    calibOverlay.id = 'calib-overlay-cv';
+    calibOverlay.style.cssText =
+      'position:fixed;inset:0;width:100%;height:100%;z-index:700;cursor:crosshair;';
+    document.body.appendChild(calibOverlay);
+  }
+  calibOverlay.width  = window.innerWidth;
+  calibOverlay.height = window.innerHeight;
+  calibOverlay.style.display = 'block';
+
+  // 수집 대기 상태: 아이가 점을 응시한 후 클릭
+  calibOverlay.onclick = onCalibClick;
+  drawCalibOverlay();
+  showToast('👁 점을 응시한 뒤 탭/클릭하세요');
 }
 
-// 최소자승 선형 회귀로 캘리브레이션 완료
-function irisCalibFinish() {
-  const pts = IRIS_CAL.points;
-  if (pts.length < 4) {
-    console.warn('[Iris] 캘리브 포인트 부족 — 단순 스케일 사용');
-    return;
-  }
+function drawCalibOverlay() {
+  if (!calibOverlay) return;
+  const cv  = calibOverlay;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
 
-  // screenX = ax*ix + bx*iy + cx 풀기 (최소자승)
-  // screenY = ay*ix + by*iy + cy 풀기
-  const n  = pts.length;
-  let sIx=0, sIy=0, sSx=0, sSy=0;
-  let sIxIx=0, sIxIy=0, sIyIy=0, sIxSx=0, sIySx=0, sIxSy=0, sIySy=0;
+  // 반투명 배경
+  ctx.fillStyle = 'rgba(3,7,18,.75)';
+  ctx.fillRect(0, 0, W, H);
 
-  pts.forEach(p => {
-    sIx   += p.ix; sIy   += p.iy;
-    sSx   += p.sx; sSy   += p.sy;
-    sIxIx += p.ix*p.ix; sIxIy += p.ix*p.iy; sIyIy += p.iy*p.iy;
-    sIxSx += p.ix*p.sx; sIySx += p.iy*p.sx;
-    sIxSy += p.ix*p.sy; sIySy += p.iy*p.sy;
+  // 진행 표시
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.font = 'bold 16px Hahmlet';
+  ctx.textAlign = 'center';
+  ctx.fillText(
+    `시선 캘리브레이션 (${IRIS.calibDotIdx + 1}/9) — 점을 바라보고 탭`,
+    W / 2, 36
+  );
+
+  // 이미 수집된 포인트
+  IRIS.calibPoints.forEach((p, i) => {
+    const x = CALIB_9[i][0] * W, y = CALIB_9[i][1] * H;
+    ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(52,211,153,.35)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#34d399'; ctx.fill();
   });
 
-  // 정규 방정식 3x3 행렬 풀기 (Cramer's rule)
-  const A = [[sIxIx,sIxIy,sIx],[sIxIy,sIyIy,sIy],[sIx,sIy,n]];
-  const bx_vec = [sIxSx, sIySx, sSx];
-  const by_vec = [sIxSy, sIySy, sSy];
+  // 현재 타겟
+  if (IRIS.calibDotIdx < 9) {
+    const tx = CALIB_9[IRIS.calibDotIdx][0] * W;
+    const ty = CALIB_9[IRIS.calibDotIdx][1] * H;
+    const t  = Date.now();
 
-  const solX = solve3x3(A, bx_vec);
-  const solY = solve3x3(A, by_vec);
+    // 바깥 링 pulse
+    const r1 = 28 + Math.sin(t * 0.006) * 8;
+    ctx.beginPath(); ctx.arc(tx, ty, r1, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(253,230,138,.4)'; ctx.lineWidth = 2; ctx.stroke();
 
-  if (solX && solY) {
-    IRIS_CAL.ax = solX[0]; IRIS_CAL.bx = solX[1]; IRIS_CAL.cx = solX[2];
-    IRIS_CAL.ay = solY[0]; IRIS_CAL.by = solY[1]; IRIS_CAL.cy = solY[2];
-    // 정규화 좌표 → 픽셀 좌표 변환
-    IRIS_CAL.ax *= window.innerWidth;  IRIS_CAL.bx *= window.innerWidth;  IRIS_CAL.cx *= window.innerWidth;
-    IRIS_CAL.ay *= window.innerHeight; IRIS_CAL.by *= window.innerHeight; IRIS_CAL.cy *= window.innerHeight;
-    IRIS_CAL.active = true;
-    setMpStatus('👁 시선+손 ON', 'on');
-    console.log('[Iris] 캘리브레이션 완료!');
-  } else {
-    console.warn('[Iris] 행렬 풀기 실패 — 단순 스케일 사용');
-  }
-}
+    // 중간 링
+    ctx.beginPath(); ctx.arc(tx, ty, 18, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(253,230,138,.7)'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(253,230,138,.15)'; ctx.fill();
 
-function solve3x3(A, b) {
-  // Gaussian elimination
-  const M = A.map((r, i) => [...r, b[i]]);
-  for (let col = 0; col < 3; col++) {
-    let maxRow = col;
-    for (let row = col+1; row < 3; row++)
-      if (Math.abs(M[row][col]) > Math.abs(M[maxRow][col])) maxRow = row;
-    [M[col], M[maxRow]] = [M[maxRow], M[col]];
-    if (Math.abs(M[col][col]) < 1e-10) return null;
-    for (let row = col+1; row < 3; row++) {
-      const f = M[row][col] / M[col][col];
-      for (let k = col; k <= 3; k++) M[row][k] -= f * M[col][k];
+    // 중심 점
+    ctx.beginPath(); ctx.arc(tx, ty, 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#fde68a'; ctx.fill();
+
+    // 숫자
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Hahmlet'; ctx.textAlign = 'center';
+    ctx.fillText(IRIS.calibDotIdx + 1, tx, ty + 38);
+
+    // 현재 홍채 위치 표시 (실시간 피드백)
+    const gx = G.gazeX, gy = G.gazeY;
+    if (gx || gy) {
+      ctx.beginPath(); ctx.arc(gx, gy, 10, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(248,113,113,.8)'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(gx, gy, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#f87171'; ctx.fill();
     }
   }
-  const x = [0, 0, 0];
-  for (let i = 2; i >= 0; i--) {
-    x[i] = M[i][3];
-    for (let j = i+1; j < 3; j++) x[i] -= M[i][j] * x[j];
-    x[i] /= M[i][i];
-  }
-  return x;
+
+  calibAnimId = requestAnimationFrame(drawCalibOverlay);
 }
 
-// 캘리브레이션 리셋
-function irisCalibReset() {
-  IRIS_CAL.active = false;
-  IRIS_CAL.points = [];
-  console.log('[Iris] 캘리브레이션 초기화');
+function onCalibClick() {
+  if (IRIS.calibDotIdx >= 9) return;
+
+  // 현재 홍채 raw 값 수집
+  IRIS.calibPoints.push({
+    ix: IRIS.rawX,
+    iy: IRIS.rawY,
+    sx: CALIB_9[IRIS.calibDotIdx][0],
+    sy: CALIB_9[IRIS.calibDotIdx][1],
+  });
+  IRIS.calibDotIdx++;
+
+  if (IRIS.calibDotIdx >= 9) {
+    // 9포인트 완료 → 회귀 계산
+    finishIrisCalib();
+  }
 }
+
+function finishIrisCalib() {
+  cancelAnimationFrame(calibAnimId);
+  if (calibOverlay) { calibOverlay.onclick = null; calibOverlay.style.display = 'none'; }
+  IRIS.calibMode = false;
+
+  const pts = IRIS.calibPoints;
+  if (pts.length < 4) { showToast('⚠️ 포인트 부족'); return; }
+
+  // 수집된 홍채 범위로 offset/scale 계산
+  // 중앙(0.5, 0.5)에 해당하는 iris 좌표 = 오프셋
+  // 가로/세로 전체 범위로 스케일 계산
+  const ixVals = pts.map(p => p.ix);
+  const iyVals = pts.map(p => p.iy);
+  const ixMin = Math.min(...ixVals), ixMax = Math.max(...ixVals);
+  const iyMin = Math.min(...iyVals), iyMax = Math.max(...iyVals);
+
+  // 선형 회귀: screen = A * iris + B
+  // 각 축 독립적으로 계산 (단순 1D 선형)
+  function linReg1D(xs, ys) {
+    const n = xs.length;
+    const mx = xs.reduce((a,b)=>a+b,0)/n;
+    const my = ys.reduce((a,b)=>a+b,0)/n;
+    let num = 0, den = 0;
+    xs.forEach((x,i)=>{ num+=(x-mx)*(ys[i]-my); den+=(x-mx)**2; });
+    const a = den > 1e-10 ? num/den : 1;
+    const b = my - a*mx;
+    return { a, b };
+  }
+
+  const rx = linReg1D(pts.map(p=>p.ix), pts.map(p=>p.sx));
+  const ry = linReg1D(pts.map(p=>p.iy), pts.map(p=>p.sy));
+
+  // a = scale, b = offset 역산
+  // screen = a * iris + b  →  iris_center(screen=0.5) = (0.5 - b) / a
+  IRIS.offsetX = rx.a !== 0 ? (0.5 - rx.b) / rx.a : 0.5;
+  IRIS.offsetY = ry.a !== 0 ? (0.5 - ry.b) / ry.a : 0.5;
+  // scaleX = iris_range / screen_range
+  IRIS.scaleX  = (ixMax - ixMin) > 0.001 ? (ixMax - ixMin) : 0.04;
+  IRIS.scaleY  = (iyMax - iyMin) > 0.001 ? (iyMax - iyMin) : 0.04;
+  // 수동 조정 초기화
+  IRIS.manualOffX = 0; IRIS.manualOffY = 0;
+  IRIS.manualScaleX = 1; IRIS.manualScaleY = 1;
+
+  IRIS.calibReady = true;
+  showToast('✅ 시선 캘리브레이션 완료!');
+  SFX.tutClear();
+
+  // 컨트롤러 UI 동기화
+  syncIrisControllerUI();
+  console.log('[Iris] 완료 — offsetX:', IRIS.offsetX.toFixed(3),
+    'offsetY:', IRIS.offsetY.toFixed(3),
+    'scaleX:', IRIS.scaleX.toFixed(4),
+    'scaleY:', IRIS.scaleY.toFixed(4));
+}
+
+function irisCalibReset() {
+  cancelAnimationFrame(calibAnimId);
+  if (calibOverlay) { calibOverlay.onclick = null; calibOverlay.style.display = 'none'; }
+  IRIS.calibMode = false; IRIS.calibPoints = []; IRIS.calibDotIdx = 0; IRIS.calibReady = false;
+  IRIS.manualOffX = 0; IRIS.manualOffY = 0; IRIS.manualScaleX = 1; IRIS.manualScaleY = 1;
+  IRIS.offsetX = 0.5; IRIS.offsetY = 0.5; IRIS.scaleX = 0.04; IRIS.scaleY = 0.04;
+  syncIrisControllerUI();
+}
+
+// 컨트롤러 슬라이더 → IRIS 값 반영
+function thSetIrisOffX(v)  { IRIS.manualOffX  = parseFloat(v); document.getElementById('iris-offx-val').textContent  = parseFloat(v).toFixed(3); }
+function thSetIrisOffY(v)  { IRIS.manualOffY  = parseFloat(v); document.getElementById('iris-offy-val').textContent  = parseFloat(v).toFixed(3); }
+function thSetIrisScaleX(v){ IRIS.manualScaleX= parseFloat(v); document.getElementById('iris-scalex-val').textContent= parseFloat(v).toFixed(1)+'×'; }
+function thSetIrisScaleY(v){ IRIS.manualScaleY= parseFloat(v); document.getElementById('iris-scaley-val').textContent= parseFloat(v).toFixed(1)+'×'; }
+function thSetIrisAlpha(v) { IRIS.alpha       = parseFloat(v); document.getElementById('iris-alpha-val').textContent = parseFloat(v).toFixed(2); }
+
+function syncIrisControllerUI() {
+  const setSlider = (id, val, min, max) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = val;
+    const pct = ((val - min) / (max - min) * 100).toFixed(1);
+    el.style.setProperty('--pct', pct + '%');
+  };
+  setSlider('iris-offx',   IRIS.manualOffX,   -0.1,  0.1);
+  setSlider('iris-offy',   IRIS.manualOffY,   -0.1,  0.1);
+  setSlider('iris-scalex', IRIS.manualScaleX,  0.3,  3.0);
+  setSlider('iris-scaley', IRIS.manualScaleY,  0.3,  3.0);
+  setSlider('iris-alpha',  IRIS.alpha,          0.05, 0.5);
+  const v = (id, val, fmt) => { const el=document.getElementById(id); if(el) el.textContent=fmt(val); };
+  v('iris-offx-val',   IRIS.manualOffX,   x=>x.toFixed(3));
+  v('iris-offy-val',   IRIS.manualOffY,   x=>x.toFixed(3));
+  v('iris-scalex-val', IRIS.manualScaleX, x=>x.toFixed(1)+'×');
+  v('iris-scaley-val', IRIS.manualScaleY, x=>x.toFixed(1)+'×');
+  v('iris-alpha-val',  IRIS.alpha,        x=>x.toFixed(2));
+}
+
+// 구버전 호환용 (캘리브 화면에서 호출했던 함수들)
+function irisCalibAddPoint() {}
+function irisCalibFinish()   {}
+function solve3x3()          { return null; }
 
 // ════════════════════════════════════════════
 //  HAND RESULTS CALLBACK
@@ -1476,8 +1672,8 @@ function pickMode(btn, val) {
 function onStart() {
   SFX.click();
   ensureCameraStarted();
-  setMpStatus('카메라 연결중...', 'warn');
-  startCalib();
+  if (G.startMode === 'tutorial') startTutorial();
+  else startMainGame();
 }
 
 function goTitle() {
@@ -1486,107 +1682,6 @@ function goTitle() {
   showScreen('title');
 }
 function restartGame() { startMainGame(); }
-
-// ════════════════════════════════════════════
-//  CALIBRATION
-// ════════════════════════════════════════════
-const CALIB_POS = [
-  [.1,.1],[.5,.1],[.9,.1],
-  [.1,.5],[.5,.5],[.9,.5],
-  [.1,.9],[.5,.9],[.9,.9],
-];
-let calibIdx = 0, calibDwell = 0, calibTimer = null, calibDone = [];
-
-function startCalib() {
-  showScreen('calib');
-  calibIdx = 0; calibDwell = 0; calibDone = new Array(9).fill(false);
-  const dots = document.getElementById('calibDots');
-  dots.innerHTML = '';
-  CALIB_POS.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'cdot' + (i === 0 ? ' act' : '');
-    d.id = 'cd' + i; dots.appendChild(d);
-  });
-  const cv = document.getElementById('calibCanvas');
-  cv.width  = Math.min(window.innerWidth - 40, 760);
-  cv.height = Math.round(cv.width * 0.63);
-  drawCalib(cv);
-  startCalibDwell(cv);
-}
-
-function drawCalib(cv) {
-  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
-  ctx.fillStyle = '#070d1a'; ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = 'rgba(30,45,74,.4)'; ctx.lineWidth = 1;
-  [1,2,3].forEach(i => {
-    ctx.beginPath(); ctx.moveTo(W*i/4, 0); ctx.lineTo(W*i/4, H); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, H*i/4); ctx.lineTo(W, H*i/4); ctx.stroke();
-  });
-  CALIB_POS.forEach(([px, py], i) => {
-    const x = px * W, y = py * H;
-    const act = i === calibIdx, done = calibDone[i];
-    ctx.beginPath(); ctx.arc(x, y, act ? 20 : 8, 0, Math.PI * 2);
-    ctx.fillStyle = done ? 'rgba(52,211,153,.25)' : act ? 'rgba(56,189,248,.2)' : 'rgba(30,45,74,.5)';
-    ctx.fill();
-    ctx.beginPath(); ctx.arc(x, y, act ? 12 : 5, 0, Math.PI * 2);
-    ctx.fillStyle = done ? '#34d399' : act ? '#38bdf8' : '#1e2d4a'; ctx.fill();
-    if (act && calibDwell > 0) {
-      const p = calibDwell / 20;
-      ctx.beginPath(); ctx.arc(x, y, 24, -Math.PI/2, -Math.PI/2 + p * Math.PI * 2);
-      ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
-    }
-    ctx.fillStyle = '#475569'; ctx.font = '11px Hahmlet'; ctx.textAlign = 'center';
-    ctx.fillText(i + 1, x, y + 32);
-  });
-}
-
-function startCalibDwell(cv) {
-  if (calibTimer) clearInterval(calibTimer);
-  calibDwell = 0;
-  calibTimer = setInterval(() => {
-    calibDwell++;
-    drawCalib(cv);
-    if (calibDwell >= 20) { clearInterval(calibTimer); advanceCalib(cv); }
-  }, 80);
-  cv.onclick = () => { clearInterval(calibTimer); calibDwell = 20; advanceCalib(cv); };
-}
-
-function advanceCalib(cv) {
-  // ── iris 캘리브 포인트 수집 ──
-  const pos = CALIB_POS[calibIdx];
-  const sx  = pos[0] * cv.width;
-  const sy  = pos[1] * cv.height;
-  // canvas 좌표 → 화면 좌표 변환
-  const rect  = cv.getBoundingClientRect();
-  const scaleX = rect.width  / cv.width;
-  const scaleY = rect.height / cv.height;
-  irisCalibAddPoint(rect.left + sx * scaleX, rect.top + sy * scaleY);
-
-  calibDone[calibIdx] = true;
-  const d = document.getElementById('cd' + calibIdx);
-  if (d) { d.classList.remove('act'); d.classList.add('done'); }
-  calibIdx++;
-  if (calibIdx >= 9) {
-    cv.onclick = null;
-    document.getElementById('calibHint').textContent = '✅ 보정 완료!';
-    irisCalibFinish();   // ← 회귀 모델 학습
-    setTimeout(() => {
-      if (G.startMode === 'tutorial') startTutorial();
-      else startMainGame();
-    }, 600);
-    return;
-  }
-  document.getElementById('calibHint').textContent = `${calibIdx + 1}번 포인트를 바라보세요`;
-  const nd = document.getElementById('cd' + calibIdx);
-  if (nd) nd.classList.add('act');
-  startCalibDwell(cv);
-}
-
-function skipCalib() {
-  if (calibTimer) clearInterval(calibTimer);
-  if (G.startMode === 'tutorial') startTutorial();
-  else startMainGame();
-}
 
 // ════════════════════════════════════════════
 //  TUTORIAL
@@ -2753,10 +2848,10 @@ function thUpdateLive() {
   if (irisEl) {
     if (!mpFaceMesh) {
       irisEl.textContent = '미지원'; irisEl.style.color = '#64748b';
-    } else if (IRIS_CAL.active) {
-      irisEl.textContent = `✅ 캘리브 완료 (${IRIS_CAL.points.length}점)`; irisEl.style.color = '#34d399';
+    } else if (IRIS.calibReady) {
+      irisEl.textContent = `✅ 캘리브 완료 (${IRIS.calibPoints.length}점)`; irisEl.style.color = '#34d399';
     } else {
-      irisEl.textContent = `⚠️ 캘리브 필요 (${IRIS_CAL.points.length}/9점)`; irisEl.style.color = '#fb923c';
+      irisEl.textContent = `⚠️ 캘리브 필요`; irisEl.style.color = '#fb923c';
     }
   }
 }
