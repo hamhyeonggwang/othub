@@ -565,7 +565,7 @@ body{background:var(--bg);font-family:'Hahmlet','Noto Sans KR',sans-serif;color:
     </div>
   </div>
 
-  <button class="start-btn" onclick="onStart()">🚀 시작하기</button>
+  <button type="button" class="start-btn" id="btn-start" onclick="onStart()">🚀 시작하기</button>
   <div class="hint-txt">웹캠이 연결된 환경에서 사용하세요 · 손 동작으로 조작</div>
 </div>
 
@@ -828,6 +828,42 @@ body{background:var(--bg);font-family:'Hahmlet','Noto Sans KR',sans-serif;color:
 'use strict';
 
 // ════════════════════════════════════════════
+//  GLOBAL STATE (게임·입력 — 병합 시 누락되면 시작 버튼 등 전부 동작 안 함)
+// ════════════════════════════════════════════
+const G = {
+  age: 'seed',
+  startMode: 'tutorial',
+  screen: 'title',
+  handX: -1,
+  handY: -1,
+  handPresent: false,
+  pinching: false,
+  gazeX: 0,
+  gazeY: 0,
+  stars: 0,
+  combo: 1,
+  maxCombo: 1,
+  timeLeft: 60,
+  gameActive: false,
+  timerInterval: null,
+  totalAttempts: 0,
+  correctAttempts: 0,
+  reactionTimes: [],
+  lastTargetTime: 0,
+  scanGrid: [],
+  scanCoverage: 0,
+  tutPhase: 0,
+  tutScore: 0,
+  lvl: {
+    seed:   { sz: 48, count: 3, time: 90, label: '🌱 Seed',   col: '#34d399', glow: 'rgba(52,211,153,.5)' },
+    sprout: { sz: 34, count: 5, time: 60, label: '🌿 Sprout', col: '#38bdf8', glow: 'rgba(56,189,248,.5)' },
+    tree:   { sz: 24, count: 7, time: 45, label: '🌳 Tree',   col: '#a78bfa', glow: 'rgba(167,139,250,.5)' },
+  },
+};
+const GRID = 40;
+const hcEl = document.getElementById('handCanvas');
+
+// ════════════════════════════════════════════
 //  MEDIAPIPE — tasks-vision@0.10.3 dynamic import
 //  writing-game-v1 검증 패턴
 //  마우스/터치 기본 | 핸드트래킹 토글 | 시선추적 토글
@@ -885,13 +921,19 @@ async function initHand() {
       await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs');
     const vision = await FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm');
-    handLM = await HandLandmarker.createFromOptions(vision, {
+    const handOpts = (del) => ({
       baseOptions:{
         modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-        delegate:'GPU'
+        delegate: del
       },
       runningMode:'VIDEO', numHands:1
     });
+    try {
+      handLM = await HandLandmarker.createFromOptions(vision, handOpts('GPU'));
+    } catch (e1) {
+      console.warn('[Hand] GPU 실패, CPU 재시도:', e1);
+      handLM = await HandLandmarker.createFromOptions(vision, handOpts('CPU'));
+    }
     await ensureCamera();
     runHand();
   } catch(e){ console.warn('[Hand]',e); stopHand(); }
@@ -899,6 +941,7 @@ async function initHand() {
 function stopHand() {
   document.getElementById('dot-hand').classList.remove('on');
   if (handRAF){ cancelAnimationFrame(handRAF); handRAF=null; }
+  handLM = null;
   G.handPresent=false; G.handX=-1; G.handY=-1; G.pinching=false;
   const fc=document.getElementById('fingerCursor');
   if (fc) fc.style.display='none';
@@ -1091,13 +1134,19 @@ async function initEye() {
       await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs');
     const vision=await FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm');
-    faceLM=await FaceLandmarker.createFromOptions(vision,{
+    const faceOpts = (del) => ({
       baseOptions:{
         modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-        delegate:'GPU'
+        delegate: del
       },
       runningMode:'VIDEO', numFaces:1, outputFaceBlendshapes:true
     });
+    try {
+      faceLM = await FaceLandmarker.createFromOptions(vision, faceOpts('GPU'));
+    } catch (e1) {
+      console.warn('[Eye] GPU 실패, CPU 재시도:', e1);
+      faceLM = await FaceLandmarker.createFromOptions(vision, faceOpts('CPU'));
+    }
     await ensureCamera();
     runEye();
     if(irisEl){irisEl.textContent='캘리브 필요';irisEl.style.color='#fb923c';}
@@ -1107,6 +1156,7 @@ async function initEye() {
 function stopEye() {
   document.getElementById('dot-eye').classList.remove('on');
   if(faceRAF){cancelAnimationFrame(faceRAF);faceRAF=null;}
+  faceLM = null;
   const dot=document.getElementById('gaze-dot-th');
   if(dot) dot.style.display='none';
   const el=document.getElementById('lv-iris');
@@ -1305,8 +1355,8 @@ document.addEventListener('touchend', e => {
 }, { passive: true });
 
 function updateGaze(x, y) {
-  // iris 추적이 활성화되어 있으면 마우스/터치 좌표 무시
-  if (faceLM) return;
+  // 시선 스위치가 켜져 있고 모델이 살아 있을 때만 마우스 좌표 무시 (faceLM만 보면 끈 뒤에도 마우스가 막힘)
+  if (cfg.sw.eye && faceLM) return;
   G.gazeX = x; G.gazeY = y;
   if (G.screen === 'game') {
     const gx = Math.floor(x / GRID), gy = Math.floor(y / GRID);
@@ -1339,9 +1389,14 @@ function pickMode(btn, val) {
 }
 
 function onStart() {
-  ensureCameraStarted();
-  if (G.startMode === 'tutorial') startTutorial();
-  else startMainGame();
+  try {
+    ensureCameraStarted();
+    if (G.startMode === 'tutorial') startTutorial();
+    else startMainGame();
+  } catch (err) {
+    console.error('[onStart]', err);
+    showToast('시작 오류: 콘솔을 확인하세요');
+  }
 }
 
 function goTitle() {
@@ -2096,20 +2151,25 @@ const GAZE = {
 
 function gazeInit() {
   GAZE.hmCanvas = document.getElementById('gaze-heatmap-canvas');
+  if (!GAZE.hmCanvas) return;
   GAZE.hmCanvas.width  = window.innerWidth;
   GAZE.hmCanvas.height = window.innerHeight;
   GAZE.hmCtx = GAZE.hmCanvas.getContext('2d');
-  GAZE.trajCtx  = document.getElementById('eye-traj-canvas').getContext('2d');
-  GAZE.speedCtx = document.getElementById('eye-speed-canvas').getContext('2d');
+  const etc = document.getElementById('eye-traj-canvas');
+  const esc = document.getElementById('eye-speed-canvas');
+  if (etc) GAZE.trajCtx = etc.getContext('2d');
+  if (esc) GAZE.speedCtx = esc.getContext('2d');
   window.addEventListener('resize', () => {
-    GAZE.hmCanvas.width = window.innerWidth;
-    GAZE.hmCanvas.height = window.innerHeight;
+    if (GAZE.hmCanvas) {
+      GAZE.hmCanvas.width = window.innerWidth;
+      GAZE.hmCanvas.height = window.innerHeight;
+    }
   });
 }
 
 function gazeUpdate() {
   const x = G.gazeX, y = G.gazeY;
-  if (!x && !y) return;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
   const nx = x / window.innerWidth, ny = y / window.innerHeight;
 
   // 시선 점 — eye 추적 미사용 시 (마우스/터치 모드) 여기서 업데이트
@@ -2587,7 +2647,7 @@ function showToast(msg) {
 //  WINDOW RESIZE
 // ════════════════════════════════════════════
 window.addEventListener('resize', () => {
-  hcEl.width = window.innerWidth; hcEl.height = window.innerHeight;
+  if (hcEl) { hcEl.width = window.innerWidth; hcEl.height = window.innerHeight; }
 });
 </script>
 </body>
