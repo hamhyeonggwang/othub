@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>코레일 승차권 키오스크 훈련</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --kr-navy:#003878;
+  --kr-blue:#1464B4;
+  --kr-blue2:#2E7BC4;
+  --kr-blue-light:#EBF3FB;
+  --kr-blue-mid:#C8DDEF;
+  --kr-red:#E42313;
+  --kr-orange:#F08000;
+  --kr-green:#00843D;
+  --kr-disabled-bg:#F2F2F2;
+  --kr-disabled:#E8E8E8;
+  --black:#1A1A1A;
+  --g1:#F7F8FA;
+  --g2:#E8ECF0;
+  --g3:#C0CAD4;
+  --g4:#7B8A99;
+  --tx:#1A1A1A;
+  --tx2:#555;
+  --white:#fff;
+
+  /* 장애인 전용 강조 */
+  --dis-purple:#6B3FA0;
+  --dis-purple-light:#F3EEF9;
+  --dis-purple-mid:#D4BCF0;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:#1a2a3a;min-height:100vh;display:flex;}
+#root{display:flex;width:100%;min-height:100vh;}
+
+/* ====== SIDEBAR ====== */
+#tp{width:272px;min-width:272px;background:#0a1520;color:white;display:flex;flex-direction:column;transition:width .35s cubic-bezier(.4,0,.2,1),min-width .35s;overflow:hidden;position:sticky;top:0;height:100vh;}
+#tp.col{width:0;min-width:0;}
+.tphd{background:#060e18;padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;}
+.tplb{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;}
+.tpnm{font-size:15px;font-weight:900;color:#6ab0ff;margin-top:2px;white-space:nowrap;}
+.tpbd{flex:1;overflow-y:auto;}
+.tpbd::-webkit-scrollbar{width:3px;}
+.tpbd::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);}
+.tpsec{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07);}
+.tpst{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.tgr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px;}
+.tgi{flex:1;}.tgl{font-size:12px;font-weight:700;white-space:nowrap;}.tgs{font-size:10px;color:rgba(255,255,255,.4);}
+.sw{width:38px;height:20px;border-radius:10px;background:rgba(255,255,255,.2);border:none;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0;}
+.sw.on{background:var(--kr-blue);}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .25s;}
+.sw.on::after{transform:translateX(18px);}
+.dfr{display:flex;gap:5px;}
+.dfb{flex:1;padding:7px 0;text-align:center;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);font-size:11px;font-weight:700;cursor:pointer;color:rgba(255,255,255,.5);background:transparent;font-family:'Noto Sans KR',sans-serif;transition:all .2s;white-space:nowrap;}
+.dfb.ae{border-color:#4ade80;background:rgba(74,222,128,.2);color:#4ade80;}
+.dfb.am{border-color:#fbbf24;background:rgba(251,191,36,.2);color:#fbbf24;}
+.dfb.ah{border-color:#f87171;background:rgba(248,113,113,.2);color:#f87171;}
+.ddc{margin-top:8px;background:rgba(100,176,255,.08);border:1px solid rgba(100,176,255,.2);border-radius:10px;padding:10px 12px;}
+.ddt{font-size:11px;font-weight:900;color:#6ab0ff;margin-bottom:4px;}
+.ddb{font-size:11px;color:rgba(255,255,255,.55);line-height:1.6;}.ddb b{color:rgba(255,255,255,.85);}
+.stg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.stc{background:rgba(255,255,255,.08);border-radius:8px;padding:8px 4px;text-align:center;}
+.stn{font-size:22px;font-weight:900;color:#6ab0ff;}
+.stl{font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;}
+.tpbtn{margin:6px 14px 0;padding:10px 14px;border-radius:10px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;width:calc(100% - 28px);display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s;white-space:nowrap;}
+.tpbtn:hover{opacity:.85;}
+.tpbtn-kr{background:linear-gradient(135deg,var(--kr-navy),var(--kr-blue));color:white;}
+#ptbtn{position:fixed;top:14px;left:14px;z-index:300;width:42px;height:42px;border-radius:11px;background:#0a1520;border:2px solid rgba(100,176,255,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#6ab0ff;box-shadow:0 4px 14px rgba(0,0,0,.5);transition:left .35s cubic-bezier(.4,0,.2,1);}
+#ptbtn.open{left:284px;}
+
+/* ====== KIOSK WRAP ====== */
+#kwrap{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 16px 40px;min-height:100vh;}
+#wmbar{width:100%;max-width:480px;margin-bottom:10px;padding-left:58px;}
+.wmi{background:linear-gradient(135deg,#0a1a2e,#0e2440);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,56,120,.4);border:1px solid rgba(100,176,255,.2);}
+.wmico{font-size:22px;flex-shrink:0;}
+.wmtx{flex:1;}
+.wmlb{font-size:10px;color:rgba(100,176,255,.7);font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.wmtask{font-size:14px;font-weight:700;color:white;margin-top:1px;}
+.wmtask.blr{filter:blur(5px);user-select:none;}
+.wmrev{padding:5px 12px;border-radius:20px;background:rgba(20,100,180,.3);border:1px solid rgba(100,176,255,.4);color:#6ab0ff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+
+/* ====== KIOSK FRAME ====== */
+#kframe{width:100%;max-width:480px;background:var(--g1);border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.7);min-height:760px;display:flex;flex-direction:column;border:3px solid var(--kr-navy);}
+
+/* KORAIL HEADER */
+.krh{background:var(--kr-navy);padding:0;flex-shrink:0;}
+.krh-top{padding:10px 18px 8px;display:flex;align-items:center;justify-content:space-between;}
+.krh-logo{display:flex;align-items:center;gap:8px;}
+.krh-logo-text{font-size:22px;font-weight:900;color:white;letter-spacing:1px;}
+.krh-logo-sub{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;margin-top:1px;}
+.krh-time{font-size:16px;font-weight:700;color:rgba(255,255,255,.85);font-variant-numeric:tabular-nums;}
+.krh-steps{background:rgba(0,0,0,.2);padding:5px 16px;display:flex;align-items:center;}
+.krh-step{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);flex-shrink:0;}
+.krh-step.act{color:white;}
+.krh-step.dn{color:#86efac;}
+.krhsd{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;flex-shrink:0;}
+.krh-step.act .krhsd{background:white;color:var(--kr-navy);}
+.krh-step.dn .krhsd{background:#86efac;color:#064e20;}
+.krhsl{flex:1;height:1px;background:rgba(255,255,255,.2);margin:0 3px;}
+.krhsl.dn{background:#86efac;}
+.krh-step span{white-space:nowrap;font-size:9px;}
+.krbody{flex:1;overflow-y:auto;background:var(--g1);}
+.krbody::-webkit-scrollbar{width:4px;}
+.krbody::-webkit-scrollbar-thumb{background:var(--g3);border-radius:2px;}
+.fe{animation:feIn .3s ease;}
+@keyframes feIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* =============================================================
+   SCREEN: IDLE
+   ============================================================= */
+.sc-idle{background:var(--kr-navy);min-height:720px;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+/* 배경 장식 */
+.idle-bg-lines{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.idle-bg-line{position:absolute;height:1px;background:rgba(255,255,255,.04);}
+.idle-top-bar{background:rgba(0,0,0,.15);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.idle-logo-main{font-size:28px;font-weight:900;color:white;letter-spacing:2px;}
+.idle-logo-sub{font-size:10px;color:rgba(255,255,255,.5);font-weight:600;margin-top:2px;}
+.idle-date-box{text-align:right;color:rgba(255,255,255,.7);}
+.idle-date{font-size:12px;font-weight:600;}
+.idle-time-big{font-size:22px;font-weight:900;color:white;font-variant-numeric:tabular-nums;}
+/* 예매 카드 */
+.idle-main{padding:18px 18px 0;}
+.idle-card{background:white;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.idle-card-hd{background:var(--kr-blue);padding:10px 18px;font-size:13px;font-weight:700;color:white;display:flex;align-items:center;justify-content:space-between;}
+.idle-card-body{padding:18px 18px 14px;}
+/* 출발 도착 */
+.idle-route{display:flex;align-items:center;gap:0;margin-bottom:16px;}
+.idle-station-box{flex:1;text-align:center;}
+.idle-station-label{font-size:11px;color:var(--g4);font-weight:600;margin-bottom:4px;}
+.idle-station-name{font-size:30px;font-weight:900;color:var(--kr-navy);}
+.idle-arrow-box{width:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.idle-swap-btn{width:38px;height:38px;border-radius:50%;border:2.5px solid var(--kr-blue);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--kr-blue);transition:all .2s;}
+.idle-swap-btn:hover{background:var(--kr-blue-light);}
+.idle-divider{height:1px;background:var(--g2);margin-bottom:14px;}
+.idle-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--g2);cursor:pointer;}
+.idle-row:last-child{border-bottom:none;padding-bottom:0;}
+.idle-row-ico{font-size:16px;flex-shrink:0;width:22px;}
+.idle-row-label{font-size:11px;color:var(--kr-blue);font-weight:700;min-width:60px;}
+.idle-row-val{flex:1;font-size:15px;font-weight:700;color:var(--tx);}
+.idle-row-arr{font-size:16px;color:var(--g3);}
+/* 하단 버튼 */
+.idle-btns{display:flex;gap:1px;margin-top:0;}
+.idle-btn{flex:1;padding:16px 12px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:900;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.idle-btn:hover{opacity:.88;}
+.idle-btn-simple{background:var(--g2);color:var(--kr-navy);}
+.idle-btn-search{background:var(--kr-blue);color:white;}
+/* 서비스 */
+.idle-services{padding:16px 18px;}
+.idle-svc-title{font-size:13px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:12px;}
+.idle-svc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.idle-svc-item{text-align:center;cursor:pointer;}
+.idle-svc-ico{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 6px;}
+.idle-svc-name{font-size:10px;color:rgba(255,255,255,.6);font-weight:600;}
+/* 하단 탭 */
+.idle-tabs{background:var(--kr-navy);border-top:1px solid rgba(255,255,255,.1);display:flex;margin-top:auto;flex-shrink:0;}
+.idle-tab{flex:1;padding:10px 0;text-align:center;cursor:pointer;border:none;background:transparent;font-family:'Noto Sans KR',sans-serif;}
+.idle-tab-ico{font-size:20px;display:block;margin-bottom:3px;}
+.idle-tab-nm{font-size:10px;font-weight:700;color:rgba(255,255,255,.5);}
+.idle-tab.act .idle-tab-nm{color:var(--kr-orange);}
+
+/* =============================================================
+   SCREEN: PASSENGER (승객 유형 + 장애인 분기)
+   ============================================================= */
+.sc-pass{background:var(--g1);min-height:720px;}
+.kr-page-hd{background:var(--kr-navy);padding:12px 18px;display:flex;align-items:center;gap:12px;}
+.kr-back-btn{width:32px;height:32px;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);background:transparent;color:white;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.kr-page-title{font-size:16px;font-weight:900;color:white;flex:1;}
+.kr-page-sub{font-size:11px;color:rgba(255,255,255,.6);}
+.pass-section{padding:16px;}
+.pass-section-title{font-size:13px;font-weight:700;color:var(--kr-blue);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.pass-section-title::after{content:'';flex:1;height:1px;background:var(--kr-blue-mid);}
+
+/* 승객 유형 카드 */
+.pass-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.pass-card{background:white;border:2.5px solid var(--g2);border-radius:14px;padding:14px 12px;cursor:pointer;transition:all .2s;text-align:center;position:relative;}
+.pass-card:hover{border-color:var(--kr-blue);}
+.pass-card.sel{border-color:var(--kr-blue);background:var(--kr-blue-light);}
+.pass-card.dis-card{border-color:var(--dis-purple-mid);}
+.pass-card.dis-card.sel{border-color:var(--dis-purple);background:var(--dis-purple-light);}
+.pass-card-ico{font-size:32px;margin-bottom:8px;}
+.pass-card-name{font-size:15px;font-weight:900;color:var(--tx);}
+.pass-card-desc{font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.4;}
+.pass-card-badge{position:absolute;top:8px;right:8px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:900;}
+.badge-blue{background:var(--kr-blue-light);color:var(--kr-blue);}
+.badge-purple{background:var(--dis-purple-light);color:var(--dis-purple);}
+.pass-check{position:absolute;top:8px;left:8px;width:22px;height:22px;border-radius:50%;background:var(--kr-blue);color:white;font-size:11px;font-weight:900;display:none;align-items:center;justify-content:center;}
+.dis-card .pass-check{background:var(--dis-purple);}
+.pass-card.sel .pass-check{display:flex;}
+
+/* ★ 장애인 전용 추가 단계 강조 박스 */
+.dis-extra-steps{background:white;border-radius:14px;border:2px solid var(--dis-purple-mid);overflow:hidden;margin-bottom:16px;}
+.des-hd{background:linear-gradient(135deg,var(--dis-purple),#8B55C4);padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.des-hd-ico{font-size:22px;}
+.des-hd-text{font-size:14px;font-weight:900;color:white;}
+.des-hd-sub{font-size:11px;color:rgba(255,255,255,.75);margin-top:2px;}
+.des-steps{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.des-step{display:flex;align-items:flex-start;gap:12px;}
+.des-step-num{width:24px;height:24px;border-radius:50%;background:var(--dis-purple);color:white;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.des-step-body{flex:1;}
+.des-step-title{font-size:13px;font-weight:900;color:var(--tx);}
+.des-step-desc{font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.5;}
+.des-step-diff{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.diff-added{background:var(--dis-purple-light);color:var(--dis-purple);}
+.diff-normal{background:var(--kr-blue-light);color:var(--kr-blue);}
+.des-step-connector{width:1px;height:10px;background:var(--dis-purple-mid);margin-left:11px;}
+
+/* 인원 선택 */
+.cnt-box{background:white;border-radius:12px;border:1.5px solid var(--g2);padding:14px 16px;margin-bottom:16px;}
+.cnt-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--g2);}
+.cnt-row:last-child{border-bottom:none;}
+.cnt-label{font-size:14px;font-weight:700;}
+.cnt-sub{font-size:11px;color:var(--tx2);}
+.cnt-ctrl{display:flex;align-items:center;gap:10px;}
+.cnt-btn{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--g2);background:white;font-size:16px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.cnt-btn:hover{border-color:var(--kr-blue);color:var(--kr-blue);}
+.cnt-num{font-size:18px;font-weight:900;min-width:28px;text-align:center;color:var(--kr-navy);}
+
+.kr-next-btn{width:100%;padding:16px;background:var(--kr-blue);border:none;border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:900;cursor:pointer;transition:opacity .2s;margin-top:4px;}
+.kr-next-btn:hover{opacity:.88;}
+.kr-next-btn:disabled{background:var(--g2);color:var(--g3);cursor:not-allowed;}
+
+/* =============================================================
+   SCREEN: 장애인 인증 (★ 추가 단계)
+   ============================================================= */
+.sc-dis{background:var(--g1);min-height:720px;}
+.dis-grade-section{padding:16px;}
+.dis-grade-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.dis-grade-card{background:white;border:2.5px solid var(--g2);border-radius:14px;padding:16px;cursor:pointer;transition:all .2s;display:flex;gap:14px;align-items:flex-start;}
+.dis-grade-card:hover{border-color:var(--dis-purple);}
+.dis-grade-card.sel{border-color:var(--dis-purple);background:var(--dis-purple-light);}
+.dgc-ico{font-size:36px;flex-shrink:0;}
+.dgc-body{flex:1;}
+.dgc-name{font-size:16px;font-weight:900;color:var(--tx);}
+.dgc-grade{font-size:12px;color:var(--tx2);margin-top:2px;}
+.dgc-discount{margin-top:8px;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;}
+.dgc-discount.heavy{background:rgba(107,63,160,.1);color:var(--dis-purple);}
+.dgc-discount.light{background:rgba(20,100,180,.1);color:var(--kr-blue);}
+.dgc-guardian{margin-top:6px;font-size:11px;color:var(--kr-green);font-weight:600;display:flex;align-items:center;gap:4px;}
+
+/* 복지카드 인증 */
+.welfare-card-box{background:white;border-radius:14px;border:2px solid var(--dis-purple-mid);overflow:hidden;margin-bottom:16px;}
+.wcb-hd{background:linear-gradient(135deg,var(--dis-purple),#8B55C4);padding:10px 16px;display:flex;align-items:center;gap:8px;}
+.wcb-hd-ico{font-size:20px;}
+.wcb-hd-text{font-size:13px;font-weight:900;color:white;}
+.wcb-body{padding:16px;}
+.wcb-reader{border:2px dashed var(--dis-purple-mid);border-radius:10px;padding:20px;text-align:center;background:var(--dis-purple-light);cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.wcb-reader:hover{border-color:var(--dis-purple);background:#ede5f7;}
+.wcb-reader-ico{font-size:42px;margin-bottom:8px;}
+.wcb-reader-text{font-size:14px;font-weight:700;color:var(--dis-purple);}
+.wcb-reader-sub{font-size:11px;color:var(--tx2);margin-top:4px;}
+.wcb-verified{display:none;background:rgba(0,132,61,.08);border:1.5px solid rgba(0,132,61,.3);border-radius:10px;padding:12px 14px;align-items:center;gap:10px;}
+.wcb-verified.show{display:flex;}
+.wcb-verified-ico{font-size:24px;}
+.wcb-verified-name{font-size:14px;font-weight:900;color:var(--kr-green);}
+.wcb-verified-info{font-size:11px;color:var(--tx2);margin-top:2px;}
+.wcb-note{font-size:11px;color:var(--g4);line-height:1.6;background:var(--g1);border-radius:8px;padding:10px 12px;}
+
+/* 보호자 선택 (중증만) */
+.guardian-box{background:white;border-radius:12px;border:1.5px solid var(--g2);padding:14px 16px;margin-bottom:16px;}
+.guardian-title{font-size:13px;font-weight:700;color:var(--kr-blue);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.guardian-opts{display:flex;gap:8px;}
+.guardian-opt{flex:1;padding:12px;border:2px solid var(--g2);border-radius:10px;text-align:center;cursor:pointer;transition:all .2s;font-family:'Noto Sans KR',sans-serif;}
+.guardian-opt:hover{border-color:var(--kr-green);}
+.guardian-opt.sel{border-color:var(--kr-green);background:rgba(0,132,61,.07);}
+.guardian-opt-ico{font-size:22px;margin-bottom:4px;}
+.guardian-opt-text{font-size:13px;font-weight:700;}
+.guardian-opt-sub{font-size:10px;color:var(--tx2);margin-top:2px;}
+
+/* =============================================================
+   SCREEN: 출발역·도착역 선택
+   ============================================================= */
+.sc-station{background:var(--g1);min-height:720px;}
+.station-route-bar{background:var(--kr-blue-light);padding:12px 18px;display:flex;align-items:center;gap:8px;margin:0 0 0;}
+.srb-from{flex:1;text-align:center;}
+.srb-label{font-size:10px;color:var(--kr-blue);font-weight:700;}
+.srb-name{font-size:22px;font-weight:900;color:var(--kr-navy);}
+.srb-arrow{font-size:22px;color:var(--kr-blue);}
+.srb-swap{width:32px;height:32px;border-radius:50%;border:2px solid var(--kr-blue);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--kr-blue);}
+.station-tabs{background:white;display:flex;border-bottom:2px solid var(--g2);}
+.station-tab{flex:1;padding:10px 6px;font-size:12px;font-weight:700;color:var(--g4);cursor:pointer;text-align:center;border-bottom:3px solid transparent;transition:all .2s;}
+.station-tab.act{color:var(--kr-blue);border-color:var(--kr-blue);}
+.station-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--g2);padding:0;}
+.station-btn{background:white;padding:14px 6px;text-align:center;cursor:pointer;transition:background .15s;border:none;font-family:'Noto Sans KR',sans-serif;}
+.station-btn:hover{background:var(--kr-blue-light);}
+.station-btn.sel{background:var(--kr-blue-light);}
+.station-btn-name{font-size:14px;font-weight:700;color:var(--tx);}
+.station-btn-eng{font-size:9px;color:var(--g4);margin-top:2px;}
+.station-confirm-btn{margin:14px;width:calc(100% - 28px);padding:15px;background:var(--kr-blue);border:none;border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:900;cursor:pointer;transition:opacity .2s;}
+.station-confirm-btn:hover{opacity:.88;}
+
+/* =============================================================
+   SCREEN: 날짜·시간 선택
+   ============================================================= */
+.sc-date{background:var(--g1);min-height:720px;padding:0;}
+.date-calendar{padding:14px 16px;}
+.cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-month{font-size:17px;font-weight:900;color:var(--kr-navy);}
+.cal-nav-btn{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--g2);background:white;cursor:pointer;font-size:14px;color:var(--kr-navy);}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;}
+.cal-wd{text-align:center;font-size:11px;font-weight:700;color:var(--g4);padding:4px 0;}
+.cal-wd.sun{color:var(--kr-red);}
+.cal-wd.sat{color:var(--kr-blue);}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;font-size:13px;font-weight:700;transition:all .18s;border:none;background:transparent;font-family:'Noto Sans KR',sans-serif;}
+.cal-day:hover:not(:disabled){background:var(--kr-blue-light);}
+.cal-day.today{border:2px solid var(--kr-blue);color:var(--kr-blue);}
+.cal-day.sel{background:var(--kr-blue);color:white;}
+.cal-day.sun{color:var(--kr-red);}
+.cal-day.sat{color:var(--kr-blue);}
+.cal-day:disabled{color:var(--g3);cursor:not-allowed;}
+.cal-day.other-month{color:var(--g3);}
+.time-section{padding:0 16px 16px;}
+.time-label{font-size:13px;font-weight:700;color:var(--kr-blue);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.time-label::after{content:'';flex:1;height:1px;background:var(--kr-blue-mid);}
+.time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.time-btn{padding:10px 6px;border:1.5px solid var(--g2);border-radius:8px;background:white;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--tx);transition:all .2s;text-align:center;}
+.time-btn:hover{border-color:var(--kr-blue);}
+.time-btn.sel{border-color:var(--kr-blue);background:var(--kr-blue-light);color:var(--kr-blue);}
+
+/* =============================================================
+   SCREEN: 열차 목록
+   ============================================================= */
+.sc-trains{background:var(--g1);min-height:720px;}
+.train-route-hd{background:var(--kr-navy);padding:10px 18px;display:flex;align-items:center;gap:8px;}
+.trh-route{font-size:18px;font-weight:900;color:white;}
+.trh-date{font-size:12px;color:rgba(255,255,255,.7);margin-left:auto;}
+.train-filter-tabs{background:white;border-bottom:2px solid var(--g2);display:flex;overflow-x:auto;}
+.train-filter-tabs::-webkit-scrollbar{display:none;}
+.tft{padding:10px 14px;font-size:12px;font-weight:700;color:var(--g4);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s;flex-shrink:0;}
+.tft.act{color:var(--kr-blue);border-color:var(--kr-blue);}
+.train-list{padding:0;}
+.train-card{background:white;border-bottom:1px solid var(--g2);padding:14px 18px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:12px;}
+.train-card:hover{background:var(--kr-blue-light);}
+.train-card.sel{background:var(--kr-blue-light);border-left:4px solid var(--kr-blue);}
+.tc-type{min-width:52px;text-align:center;}
+.tc-type-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:900;}
+.ktx{background:var(--kr-red);color:white;}
+.itx{background:var(--kr-blue);color:white;}
+.mgh{background:#666;color:white;}
+.tc-times{flex:1;}
+.tc-depart{font-size:22px;font-weight:900;color:var(--kr-navy);display:inline;}
+.tc-arrive{font-size:22px;font-weight:900;color:var(--kr-navy);display:inline;}
+.tc-arrow{font-size:14px;color:var(--g4);margin:0 8px;}
+.tc-duration{font-size:11px;color:var(--g4);margin-top:3px;}
+.tc-right{text-align:right;}
+.tc-price{font-size:16px;font-weight:900;color:var(--kr-navy);}
+.tc-dis-price{font-size:12px;color:var(--dis-purple);font-weight:700;}
+.tc-seats{font-size:11px;margin-top:2px;}
+.seats-ok{color:var(--kr-green);}
+.seats-few{color:var(--kr-orange);}
+.seats-none{color:var(--kr-red);}
+.train-select-btn{margin:14px;width:calc(100% - 28px);padding:15px;background:var(--kr-blue);border:none;border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:900;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.train-select-btn:disabled{background:var(--g2);color:var(--g3);cursor:not-allowed;}
+.train-select-btn:not(:disabled):hover{opacity:.88;}
+
+/* =============================================================
+   SCREEN: 좌석 선택
+   ============================================================= */
+.sc-seat{background:var(--g1);min-height:720px;}
+.seat-train-info{background:var(--kr-navy);padding:10px 18px;display:flex;align-items:center;gap:12px;}
+.sti-type{padding:4px 12px;border-radius:20px;font-size:13px;font-weight:900;}
+.sti-route{font-size:14px;color:white;flex:1;}
+.sti-time{font-size:12px;color:rgba(255,255,255,.7);}
+.seat-car-tabs{background:white;border-bottom:2px solid var(--g2);display:flex;overflow-x:auto;flex-shrink:0;}
+.seat-car-tabs::-webkit-scrollbar{display:none;}
+.sct{padding:8px 14px;font-size:12px;font-weight:700;color:var(--g4);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s;flex-shrink:0;}
+.sct.act{color:var(--kr-blue);border-color:var(--kr-blue);}
+/* 좌석 배치도 */
+.seat-map-wrap{padding:12px 14px;background:white;margin:0 0 1px;}
+.seat-direction{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.sd-label{font-size:11px;font-weight:700;color:var(--g4);}
+.sd-dir{font-size:11px;font-weight:700;color:var(--kr-blue);display:flex;align-items:center;gap:4px;}
+.seat-legend{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+.sl-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--g4);}
+.sl-box{width:14px;height:14px;border-radius:3px;}
+.sl-empty{background:var(--g1);border:1.5px solid var(--g2);}
+.sl-avail{background:#EBF5FF;border:1.5px solid var(--kr-blue);}
+.sl-dis{background:var(--dis-purple-light);border:1.5px solid var(--dis-purple);}
+.sl-sel{background:var(--kr-blue);border:1.5px solid var(--kr-blue);}
+.sl-sold{background:var(--g2);border:1.5px solid var(--g2);}
+/* 호차 레이아웃 */
+.seat-car-layout{background:var(--g1);border-radius:10px;padding:10px;border:1.5px solid var(--g2);}
+.seat-row{display:flex;align-items:center;gap:4px;margin-bottom:3px;}
+.seat-row-num{width:20px;font-size:10px;color:var(--g4);font-weight:600;text-align:center;flex-shrink:0;}
+.seat-cell{width:34px;height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:pointer;transition:all .18s;border:1.5px solid var(--g2);flex-shrink:0;}
+.seat-cell.avail{background:#EBF5FF;border-color:var(--kr-blue);color:var(--kr-blue);}
+.seat-cell.avail:hover{background:var(--kr-blue);color:white;}
+.seat-cell.dis-seat{background:var(--dis-purple-light);border-color:var(--dis-purple);color:var(--dis-purple);}
+.seat-cell.dis-seat:hover{background:var(--dis-purple);color:white;}
+.seat-cell.sold{background:var(--g2);border-color:var(--g2);color:var(--g3);cursor:not-allowed;}
+.seat-cell.sel{background:var(--kr-blue);border-color:var(--kr-blue);color:white;}
+.seat-cell.dis-sel{background:var(--dis-purple);border-color:var(--dis-purple);color:white;}
+.seat-aisle{width:18px;flex-shrink:0;}
+.seat-col-labels{display:flex;align-items:center;gap:4px;margin-bottom:4px;padding-left:24px;}
+.scl{width:34px;font-size:10px;font-weight:700;color:var(--g4);text-align:center;flex-shrink:0;}
+.scl-aisle{width:18px;flex-shrink:0;}
+/* 선택 결과 */
+.seat-selected-bar{background:var(--kr-blue-light);border-radius:10px;padding:10px 14px;margin:10px 14px 0;display:flex;align-items:center;gap:10px;}
+.ssb-icon{font-size:18px;}
+.ssb-text{flex:1;font-size:13px;font-weight:700;color:var(--kr-navy);}
+.ssb-clear{padding:5px 10px;border:1.5px solid var(--kr-blue);border-radius:8px;background:white;color:var(--kr-blue);font-size:11px;font-weight:700;cursor:pointer;}
+/* 좌석 예약 버튼 */
+.seat-reserve-btn{margin:10px 14px 14px;width:calc(100% - 28px);padding:15px;background:var(--kr-blue);border:none;border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:900;cursor:pointer;transition:opacity .2s;}
+.seat-reserve-btn:disabled{background:var(--g2);color:var(--g3);cursor:not-allowed;}
+.seat-reserve-btn:not(:disabled):hover{opacity:.88;}
+
+/* =============================================================
+   SCREEN: 결제
+   ============================================================= */
+.sc-pay{background:var(--g1);min-height:720px;padding:0;}
+/* 승차권 요약 (핵심 WM 확인 영역) */
+.ticket-summary{background:var(--kr-navy);padding:16px 18px;}
+.ts-title{font-size:12px;color:rgba(255,255,255,.6);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.ts-card{background:white;border-radius:12px;overflow:hidden;}
+.ts-card-hd{background:var(--kr-blue);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;}
+.tsch-type{font-size:14px;font-weight:900;color:white;}
+.tsch-num{font-size:12px;color:rgba(255,255,255,.75);}
+/* ★ 핵심 정보 확인 영역 */
+.ts-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.ts-info-item{padding:12px 16px;border-bottom:1px solid var(--g2);border-right:1px solid var(--g2);}
+.ts-info-item:nth-child(2n){border-right:none;}
+.ts-info-item:nth-last-child(-n+2){border-bottom:none;}
+.ts-info-label{font-size:10px;color:var(--kr-blue);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.ts-info-val{font-size:15px;font-weight:900;color:var(--kr-navy);}
+.ts-info-val.highlight{color:var(--kr-red);font-size:18px;}
+.ts-info-sub{font-size:11px;color:var(--tx2);margin-top:2px;}
+/* 할인 표시 */
+.ts-dis-banner{background:var(--dis-purple-light);border:1.5px solid var(--dis-purple-mid);border-radius:10px;padding:10px 14px;margin:14px 18px 0;display:flex;align-items:center;gap:10px;}
+.tdb-ico{font-size:20px;}
+.tdb-text{font-size:13px;font-weight:700;color:var(--dis-purple);}
+.tdb-sub{font-size:11px;color:var(--tx2);margin-top:2px;}
+/* 결제 수단 */
+.pay-methods-section{padding:14px 18px;}
+.pay-methods{display:flex;flex-direction:column;gap:8px;}
+.pay-m{background:white;border:2px solid var(--g2);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px;}
+.pay-m:hover{border-color:var(--kr-blue);}
+.pay-m.sel{border-color:var(--kr-blue);background:var(--kr-blue-light);}
+.pay-m-ico{font-size:26px;flex-shrink:0;}
+.pay-m-nm{font-size:14px;font-weight:700;}
+.pay-m-ds{font-size:11px;color:var(--tx2);}
+.pay-m-chk{margin-left:auto;width:24px;height:24px;border-radius:50%;background:var(--kr-blue);color:white;font-size:12px;font-weight:900;display:none;align-items:center;justify-content:center;flex-shrink:0;}
+.pay-m.sel .pay-m-chk{display:flex;}
+.pay-total-row{background:var(--kr-navy);margin:0 18px 14px;border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
+.ptr-l{color:rgba(255,255,255,.7);font-size:14px;font-weight:700;}
+.ptr-n{color:white;font-size:26px;font-weight:900;}
+.pay-confirm-btn{margin:0 18px 18px;width:calc(100% - 36px);padding:16px;background:var(--kr-blue);border:none;border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:17px;font-weight:900;cursor:pointer;transition:opacity .2s;}
+.pay-confirm-btn:disabled{background:var(--g2);color:var(--g3);cursor:not-allowed;}
+.pay-confirm-btn:not(:disabled):hover{opacity:.88;}
+
+/* =============================================================
+   SCREEN: 완료 + 승차권
+   ============================================================= */
+.sc-done{background:var(--kr-navy);min-height:720px;display:flex;flex-direction:column;}
+.done-top{background:var(--kr-blue);padding:20px 20px 16px;text-align:center;position:relative;}
+.done-check{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 10px;animation:popin .5s cubic-bezier(.4,0,.2,1);}
+@keyframes popin{from{transform:scale(.3);opacity:0;}60%{transform:scale(1.15);}to{transform:scale(1);opacity:1;}}
+.done-title{font-size:22px;font-weight:900;color:white;}
+.done-sub{font-size:13px;color:rgba(255,255,255,.8);margin-top:4px;}
+
+/* ★ 승차권 — WM 훈련의 핵심 */
+.ticket-wrap{margin:0 16px;transform:translateY(-20px);}
+.ticket{background:white;border-radius:16px;overflow:hidden;box-shadow:0 12px 36px rgba(0,0,0,.4);}
+.ticket-hd{background:var(--kr-navy);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.th-logo{font-size:18px;font-weight:900;color:white;letter-spacing:1px;}
+.th-type{padding:4px 12px;border-radius:20px;font-size:13px;font-weight:900;}
+.ticket-route{padding:16px 20px 12px;border-bottom:1.5px dashed var(--g2);}
+.tr-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.tr-station{font-size:28px;font-weight:900;color:var(--kr-navy);}
+.tr-arrow{font-size:20px;color:var(--g3);}
+.tr-depart-time{font-size:24px;font-weight:900;color:var(--kr-red);}
+.tr-arrive-time{font-size:18px;font-weight:700;color:var(--tx2);}
+.tr-date{font-size:14px;font-weight:700;color:var(--tx2);margin-top:4px;}
+/* ★ 좌석 + 호차 — WM 핵심 확인 영역 */
+.ticket-seat-section{padding:14px 20px;border-bottom:1.5px dashed var(--g2);background:var(--kr-blue-light);}
+.tss-label{font-size:11px;font-weight:700;color:var(--kr-blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.tss-cards{display:flex;gap:10px;flex-wrap:wrap;}
+.tss-card{background:white;border:2px solid var(--kr-blue);border-radius:10px;padding:10px 14px;text-align:center;min-width:80px;}
+.tss-card.dis-seat-card{border-color:var(--dis-purple);}
+.tss-car{font-size:11px;font-weight:700;color:var(--g4);margin-bottom:4px;}
+.tss-seat-num{font-size:22px;font-weight:900;color:var(--kr-navy);}
+.tss-seat-sub{font-size:10px;color:var(--tx2);margin-top:2px;}
+.tss-seat-type{font-size:10px;font-weight:700;margin-top:4px;padding:2px 6px;border-radius:10px;display:inline-block;}
+.tss-seat-type.dis{background:var(--dis-purple-light);color:var(--dis-purple);}
+.tss-seat-type.normal{background:var(--kr-blue-light);color:var(--kr-blue);}
+/* 여객 정보 */
+.ticket-pax{padding:12px 20px;border-bottom:1.5px dashed var(--g2);}
+.tp-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;}
+.tp-label{color:var(--g4);font-weight:600;}
+.tp-val{font-weight:700;color:var(--tx);}
+.tp-val.price{color:var(--kr-red);font-size:15px;}
+/* 바코드 영역 */
+.ticket-qr{padding:14px 20px;text-align:center;}
+.tqr-num{font-size:11px;color:var(--g4);font-weight:600;margin-bottom:8px;letter-spacing:2px;}
+.tqr-barcode{background:var(--black);height:52px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:1px;overflow:hidden;margin-bottom:8px;}
+.tqr-bar{background:white;height:100%;animation:none;}
+.tqr-note{font-size:11px;color:var(--g4);}
+
+/* 장애인 주의사항 */
+.dis-caution-box{background:rgba(107,63,160,.1);border:1px solid var(--dis-purple-mid);border-radius:10px;padding:12px 14px;margin:0 16px 14px;}
+.dcb-title{font-size:12px;font-weight:700;color:var(--dis-purple);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.dcb-item{font-size:11px;color:rgba(255,255,255,.7);padding:3px 0;display:flex;gap:6px;}
+.dcb-item::before{content:'·';color:var(--dis-purple);font-weight:900;}
+
+/* 퀴즈 */
+.done-btns{display:flex;gap:10px;margin:0 16px 18px;}
+.done-quiz-btn{flex:1;padding:13px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.done-home-btn{flex:2;padding:13px;background:var(--kr-blue);border:none;border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:900;cursor:pointer;}
+
+/* =============================================================
+   QUIZ
+   ============================================================= */
+.quiz-ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.quiz-ov.show{opacity:1;pointer-events:all;}
+.quiz-box{background:white;border-radius:22px;padding:26px 22px;width:92%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4);border:4px solid var(--kr-blue);transform:scale(.92);transition:transform .25s;}
+.quiz-ov.show .quiz-box{transform:scale(1);}
+.quiz-ico{font-size:44px;text-align:center;margin-bottom:8px;}
+.quiz-t{font-size:18px;font-weight:900;text-align:center;margin-bottom:4px;}
+.quiz-s{font-size:12px;color:var(--tx2);text-align:center;margin-bottom:16px;line-height:1.5;}
+.quiz-choices{display:flex;flex-direction:column;gap:8px;}
+.qc{padding:13px 16px;border-radius:12px;border:2px solid var(--g2);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:10px;background:#fafafa;transition:all .2s;font-family:'Noto Sans KR',sans-serif;}
+.qc:hover:not(:disabled){border-color:var(--kr-blue);background:var(--kr-blue-light);}
+.qc.ok{border-color:var(--kr-green);background:rgba(0,132,61,.08);color:var(--kr-green);}
+.qc.no{border-color:var(--kr-red);background:rgba(228,35,19,.06);color:var(--kr-red);}
+.qfb{margin-top:10px;padding:11px 14px;border-radius:12px;font-size:14px;font-weight:700;text-align:center;display:none;}
+.qfb.show.g{display:block;background:rgba(0,132,61,.08);color:var(--kr-green);}
+.qfb.show.b{display:block;background:rgba(228,35,19,.06);color:var(--kr-red);}
+.qnxt{margin-top:10px;width:100%;padding:12px;background:var(--kr-blue);border:none;border-radius:12px;color:white;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:none;}
+.qnxt.show{display:block;}
+
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(60px);background:rgba(0,30,60,.95);color:white;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:700;z-index:700;pointer-events:none;transition:transform .35s cubic-bezier(.4,0,.2,1);white-space:nowrap;border:2px solid rgba(100,176,255,.3);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div id="root">
+
+<!-- SIDEBAR -->
+<div id="tp">
+  <div class="tphd"><div class="tplb">치료사 컨트롤</div><div class="tpnm">🚄 코레일 키오스크 훈련</div></div>
+  <div class="tpbd">
+    <div class="tpsec">
+      <div class="tpst">🎯 예매 모드</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button onclick="setMode('normal',this)" id="btn-mode-normal"
+          style="padding:10px;border-radius:8px;border:1.5px solid rgba(100,176,255,.5);background:rgba(20,100,180,.3);color:#6ab0ff;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">
+          🔵 일반석 예매
+        </button>
+        <button onclick="setMode('disabled',this)" id="btn-mode-disabled"
+          style="padding:10px;border-radius:8px;border:1.5px solid rgba(107,63,160,.4);background:transparent;color:rgba(255,255,255,.5);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">
+          🟣 장애인석 예매
+        </button>
+      </div>
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(107,63,160,.1);border:1px solid rgba(107,63,160,.25);border-radius:8px;">
+        <div style="font-size:10px;font-weight:700;color:#a78ddc;margin-bottom:4px;">장애인석 차이점</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.5);line-height:1.6;">
+          ② 장애 구분 선택<br>
+          ③ 복지카드 인증<br>
+          ④ 보호자 여부 (중증만)<br>
+          ⑥ 장애인석 우선 표시
+        </div>
+      </div>
+    </div>
+    <div class="tpsec">
+      <div class="tpst">🧠 워킹메모리 옵션</div>
+      <div class="tgr"><div class="tgi"><div class="tgl">미션 제시</div><div class="tgs">예매 목표 제시</div></div><button class="sw on" id="sw-ms" onclick="togOpt('mission',this)"></button></div>
+      <div class="tgr"><div class="tgi"><div class="tgl">승차권 퀴즈</div><div class="tgs">좌석·일정 확인 테스트</div></div><button class="sw on" id="sw-qz" onclick="togOpt('quiz',this)"></button></div>
+      <div class="tgr"><div class="tgi"><div class="tgl">미션 숨김</div><div class="tgs">기억 후 블러</div></div><button class="sw" id="sw-hd" onclick="togOpt('mhide',this)"></button></div>
+    </div>
+    <div class="tpsec">
+      <div class="tpst">⚡ 난이도</div>
+      <div class="dfr">
+        <button class="dfb ae" onclick="setDiff('e',this)">쉬움</button>
+        <button class="dfb" onclick="setDiff('m',this)">보통</button>
+        <button class="dfb" onclick="setDiff('h',this)">어려움</button>
+      </div>
+      <div class="ddc"><div class="ddt" id="ddt">🟢 쉬움</div><div class="ddb" id="ddb">단순 구간 예매<br>좌석 <b>1개</b>만 기억</div></div>
+    </div>
+    <div class="tpsec">
+      <div class="tpst">📊 세션 기록</div>
+      <div class="stg">
+        <div class="stc"><div class="stn" id="st-t">0</div><div class="stl">시도</div></div>
+        <div class="stc"><div class="stn" id="st-c">0</div><div class="stl">정답</div></div>
+        <div class="stc"><div class="stn" id="st-p">0%</div><div class="stl">정확도</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:8px 0 14px;"><button class="tpbtn tpbtn-kr" onclick="resetAll()">🔄 새 세션 시작</button></div>
+</div>
+<button id="ptbtn" class="open" onclick="togPanel()">☰</button>
+
+<!-- KIOSK -->
+<div id="kwrap">
+  <div id="wmbar">
+    <div class="wmi">
+      <span class="wmico">🎯</span>
+      <div class="wmtx"><div class="wmlb">오늘의 미션</div><div class="wmtask" id="wmtask">기차를 예매하고 좌석 번호와 출발 시간을 기억하세요!</div></div>
+      <button class="wmrev" id="wmrev" onclick="revealMs()" style="display:none">보기</button>
+    </div>
+  </div>
+  <div id="kframe">
+    <div class="krh">
+      <div class="krh-top">
+        <div class="krh-logo"><div class="krh-logo-text">KORAIL</div></div>
+        <div class="krh-time" id="krh-time">00:00</div>
+      </div>
+      <div class="krh-steps" id="krh-steps"></div>
+    </div>
+    <div class="krbody fe" id="krbody"></div>
+  </div>
+</div>
+</div>
+
+<div class="quiz-ov" id="quiz-ov">
+  <div class="quiz-box">
+    <div class="quiz-ico">🧠</div>
+    <div class="quiz-t" id="quiz-t">승차권 정보를 기억하나요?</div>
+    <div class="quiz-s" id="quiz-s">방금 예매한 승차권 정보를 확인해보세요!</div>
+    <div class="quiz-choices" id="quiz-choices"></div>
+    <div class="qfb" id="qfb"></div>
+    <button class="qnxt" id="qnxt" onclick="nextQuiz()">다음 →</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   DATA
+   ================================================================ */
+const STEPS_NORMAL = ['출발/도착','날짜','열차선택','좌석선택','결제','완료'];
+const STEPS_DISABLED = ['승객유형','장애인증','출발/도착','날짜','열차선택','좌석선택','결제','완료'];
+const SCREEN_STEP_NORMAL  = {idle:-1,station:0,date:1,trains:2,seat:3,payment:4,done:5};
+const SCREEN_STEP_DISABLED = {idle:-1,passenger:0,dis_auth:1,station:2,date:3,trains:4,seat:5,payment:6,done:7};
+
+const STATIONS_BY_REGION = {
+  '수도권':['서울','용산','영등포','수원','광명'],
+  '충청':['천안아산','오송','대전','서대전','조치원'],
+  '영남':['동대구','대구','부산','울산','경주','포항'],
+  '호남':['광주송정','목포','전주','익산','여수'],
+  '강원':['강릉','원주','춘천','동해'],
+};
+const ALL_STATIONS = Object.values(STATIONS_BY_REGION).flat();
+const STATION_ENG = {
+  '서울':'Seoul','용산':'Yongsan','영등포':'Yeongdeungpo','수원':'Suwon','광명':'Gwangmyeong',
+  '천안아산':'Cheonan','오송':'Osong','대전':'Daejeon','서대전':'Seodaejeon','조치원':'Jochiwon',
+  '동대구':'Dongdaegu','대구':'Daegu','부산':'Busan','울산':'Ulsan','경주':'Gyeongju','포항':'Pohang',
+  '광주송정':'Gwangju','목포':'Mokpo','전주':'Jeonju','익산':'Iksan','여수':'Yeosu',
+  '강릉':'Gangneung','원주':'Wonju','춘천':'Chuncheon','동해':'Donghae',
+};
+
+const TRAINS = [
+  {id:'k101',type:'KTX',badge:'ktx',depart:'07:00',arrive:'08:30',duration:'1시간 30분',price:59800,seats:12,car:3},
+  {id:'k103',type:'KTX',badge:'ktx',depart:'08:30',arrive:'10:05',duration:'1시간 35분',price:59800,seats:0,car:4},
+  {id:'k105',type:'KTX',badge:'ktx',depart:'09:00',arrive:'10:35',duration:'1시간 35분',price:59800,seats:28,car:5},
+  {id:'i201',type:'ITX-새마을',badge:'itx',depart:'09:40',arrive:'12:10',duration:'2시간 30분',price:42600,seats:45,car:3},
+  {id:'k107',type:'KTX',badge:'ktx',depart:'10:30',arrive:'12:05',duration:'1시간 35분',price:59800,seats:6,car:6},
+  {id:'m301',type:'무궁화',badge:'mgh',depart:'11:10',arrive:'14:50',duration:'3시간 40분',price:28600,seats:62,car:4},
+  {id:'k109',type:'KTX',badge:'ktx',depart:'12:00',arrive:'13:35',duration:'1시간 35분',price:59800,seats:19,car:7},
+];
+
+/* 좌석 배치 데이터 생성 */
+function genSeats(isDis){
+  const rows=[];
+  const disRows=[1,2]; // 1~2열은 장애인석
+  for(let r=1;r<=10;r++){
+    const row=[];
+    for(const col of ['A','B','C','D']){
+      const id=`${r}${col}`;
+      const isDisSeat=disRows.includes(r);
+      const rand=Math.random();
+      let status;
+      if(isDisSeat){status=isDis?(rand<0.4?'dis-seat':'sold'):'sold';}
+      else{status=rand<0.6?'avail':'sold';}
+      row.push({id,col,row:r,status,isDis:isDisSeat});
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+/* 실제 오늘 날짜 기반 달력 */
+const TODAY = new Date();
+
+const MISSIONS_LIST = {
+  normal:{
+    e:['서울→부산 KTX 예매하고 좌석 번호를 기억하세요!','원하는 시간대 열차를 골라 예매해보세요!'],
+    m:['좌석 번호와 출발 시간 모두 기억하세요!','호차·좌석·출발시각을 기억하며 예매해요!'],
+    h:['열차 번호·호차·좌석번호·출발시각을 모두 기억하세요!','도착역·출발시각·좌석을 모두 기억해보세요!'],
+  },
+  disabled:{
+    e:['장애인석 예매 절차를 따라해 보세요!','복지카드 인증 후 좌석을 선택하세요!'],
+    m:['장애인 할인이 적용된 금액을 확인하고 좌석을 기억하세요!','장애인석 예매 후 좌석 번호를 기억하세요!'],
+    h:['장애인 예매 전 절차(장애구분·인증·보호자)를 기억하며 진행하세요!','모든 예매 정보를 기억하고 퀴즈에 답하세요!'],
+  }
+};
+
+const DIFF_INFO={
+  e:{tag:'🟢 쉬움',desc:'단순 구간 예매<br>좌석 <b>1개</b>만 기억'},
+  m:{tag:'🟡 보통',desc:'호차·좌석·출발시각 기억<br><b>3가지</b> 정보 통합'},
+  h:{tag:'🔴 어려움',desc:'모든 예매 정보 기억<br>장애인 절차 포함 <b>5가지</b>'},
+};
+
+/* ================================================================
+   STATE
+   ================================================================ */
+const S = {
+  screen: 'idle',
+  mode: 'normal',          // normal | disabled
+  difficulty: 'e',
+  opts: {mission:true, quiz:true, mhide:false},
+  stats: {trials:0, correct:0},
+  mission: '',
+  // 예매 데이터
+  from: '서울', to: '부산',
+  fromSelecting: true,
+  stationRegion: '수도권',
+  selDate: null,
+  selTimeSlot: '전체',
+  selTrain: null,
+  seats: [],
+  selSeats: [],
+  payMethod: null,
+  // 장애인 전용
+  disGrade: null,    // 'heavy' | 'light'
+  disVerified: false,
+  withGuardian: false,
+  // 퀴즈 상태
+  quizQueue: [],
+  quizIdx: 0,
+};
+
+/* ================================================================
+   UTILS
+   ================================================================ */
+setInterval(()=>{
+  const n=new Date();
+  const e=document.getElementById('krh-time');
+  if(e) e.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+},1000);
+let toastT;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2500);}
+
+function renderSteps(){
+  const steps = S.mode==='disabled'?STEPS_DISABLED:STEPS_NORMAL;
+  const stepMap = S.mode==='disabled'?SCREEN_STEP_DISABLED:SCREEN_STEP_NORMAL;
+  const cur = stepMap[S.screen]??-1;
+  document.getElementById('krh-steps').innerHTML=steps.map((s,i)=>{
+    const cls=i<cur?'dn':i===cur?'act':'';
+    const dot=i<cur?'✓':(i+1);
+    const line=i<steps.length-1?`<div class="krhsl ${i<cur?'dn':''}"></div>`:'';
+    return `<div class="krh-step ${cls}"><div class="krhsd">${dot}</div><span>${s}</span></div>${line}`;
+  }).join('');
+}
+
+function calcDisPrice(basePrice){
+  if(S.disGrade==='heavy') return Math.round(basePrice*0.5/100)*100;
+  if(S.disGrade==='light') return Math.round(basePrice*0.7/100)*100;
+  return basePrice;
+}
+
+/* ================================================================
+   RENDER ROUTER
+   ================================================================ */
+function render(){
+  renderSteps();
+  const body=document.getElementById('krbody');
+  body.className='krbody fe';void body.offsetWidth;
+  switch(S.screen){
+    case 'idle':      r_idle(body);     break;
+    case 'passenger': r_passenger(body);break;
+    case 'dis_auth':  r_dis_auth(body); break;
+    case 'station':   r_station(body);  break;
+    case 'date':      r_date(body);     break;
+    case 'trains':    r_trains(body);   break;
+    case 'seat':      r_seat(body);     break;
+    case 'payment':   r_payment(body);  break;
+    case 'done':      r_done(body); if(S.opts.quiz)setTimeout(startQuiz,1800); break;
+  }
+}
+
+/* ================================================================
+   IDLE
+   ================================================================ */
+function r_idle(b){
+  const now=new Date();
+  const days=['일','월','화','수','목','금','토'];
+  const dateStr=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+  b.innerHTML=`<div class="sc-idle">
+    <div class="idle-bg-lines">
+      ${Array.from({length:20},(_,i)=>`<div class="idle-bg-line" style="top:${i*38}px;left:0;right:0;"></div>`).join('')}
+    </div>
+    <div class="idle-top-bar">
+      <div>
+        <div class="idle-logo-main">KORAIL</div>
+        <div class="idle-logo-sub">한국철도공사 무인발권기</div>
+      </div>
+      <div class="idle-date-box">
+        <div class="idle-date">${dateStr}</div>
+        <div class="idle-time-big" id="idle-clock">${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}</div>
+      </div>
+    </div>
+    <div class="idle-main">
+      <div class="idle-card">
+        <div class="idle-card-hd">
+          <span>승차권 예매</span>
+          <span style="font-size:11px;font-weight:500;opacity:.8;">편도</span>
+        </div>
+        <div class="idle-card-body">
+          <div class="idle-route">
+            <div class="idle-station-box">
+              <div class="idle-station-label">출발</div>
+              <div class="idle-station-name">${S.from}</div>
+            </div>
+            <div class="idle-arrow-box">
+              <button class="idle-swap-btn" onclick="swapRoute()">⇄</button>
+            </div>
+            <div class="idle-station-box">
+              <div class="idle-station-label">도착</div>
+              <div class="idle-station-name">${S.to}</div>
+            </div>
+          </div>
+          <div class="idle-divider"></div>
+          <div class="idle-row" onclick="goFirstScreen()">
+            <span class="idle-row-ico">📅</span>
+            <span class="idle-row-label">가는날</span>
+            <span class="idle-row-val">${dateStr} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}</span>
+            <span class="idle-row-arr">›</span>
+          </div>
+          <div class="idle-row" onclick="goFirstScreen()">
+            <span class="idle-row-ico">👤</span>
+            <span class="idle-row-label">인원선택</span>
+            <span class="idle-row-val">${S.mode==='disabled'?'장애인 1명':'어른 1명'}</span>
+            <span class="idle-row-arr">›</span>
+          </div>
+        </div>
+        <div class="idle-btns">
+          <button class="idle-btn idle-btn-simple" onclick="goFirstScreen()">간편구매</button>
+          <button class="idle-btn idle-btn-search" onclick="goFirstScreen()">🔍 열차조회</button>
+        </div>
+      </div>
+    </div>
+    <div class="idle-services">
+      <div class="idle-svc-title">이런 서비스는 어떠세요?</div>
+      <div class="idle-svc-grid">
+        <div class="idle-svc-item"><div class="idle-svc-ico">🗺️</div><div class="idle-svc-name">길안내</div></div>
+        <div class="idle-svc-item"><div class="idle-svc-ico">🚄</div><div class="idle-svc-name">열차위치</div></div>
+        <div class="idle-svc-item"><div class="idle-svc-ico">🅿️</div><div class="idle-svc-name">주차</div></div>
+        <div class="idle-svc-item"><div class="idle-svc-ico">✈️</div><div class="idle-svc-name">공항버스</div></div>
+      </div>
+    </div>
+    <div class="idle-tabs">
+      <button class="idle-tab act"><span class="idle-tab-ico">🏠</span><span class="idle-tab-nm">홈</span></button>
+      <button class="idle-tab"><span class="idle-tab-ico">🎁</span><span class="idle-tab-nm">혜택·정기권</span></button>
+      <button class="idle-tab"><span class="idle-tab-ico">🧳</span><span class="idle-tab-nm">여행상품</span></button>
+      <button class="idle-tab"><span class="idle-tab-ico">🎫</span><span class="idle-tab-nm">나의 티켓</span></button>
+    </div>
+  </div>`;
+  setInterval(()=>{const n=new Date();const e=document.getElementById('idle-clock');if(e)e.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');},1000);
+}
+
+function goFirstScreen(){
+  if(S.mode==='disabled') goScr('passenger');
+  else goScr('station');
+}
+function swapRoute(){const t=S.from;S.from=S.to;S.to=t;render();}
+
+/* ================================================================
+   PASSENGER (승객 유형)
+   ================================================================ */
+function r_passenger(b){
+  b.innerHTML=`<div class="sc-pass">
+    <div class="kr-page-hd">
+      <button class="kr-back-btn" onclick="goScr('idle')">←</button>
+      <div><div class="kr-page-title">승객 유형 선택</div><div class="kr-page-sub">해당하는 유형을 선택해주세요</div></div>
+    </div>
+    <div class="pass-section">
+      <div class="pass-section-title">일반 승객</div>
+      <div class="pass-grid">
+        <div class="pass-card ${S.disGrade===null&&!S.fromDisabled?'sel':''}" onclick="selPassType('adult')">
+          <div class="pass-check">✓</div>
+          <div class="pass-card-ico">👤</div>
+          <div class="pass-card-name">어른</div>
+          <div class="pass-card-desc">만 13세 이상</div>
+        </div>
+        <div class="pass-card" onclick="selPassType('child')">
+          <span class="pass-card-badge badge-blue">50%</span>
+          <div class="pass-card-ico">👦</div>
+          <div class="pass-card-name">어린이</div>
+          <div class="pass-card-desc">만 4~12세</div>
+        </div>
+        <div class="pass-card" onclick="selPassType('senior')">
+          <span class="pass-card-badge badge-blue">30%</span>
+          <div class="pass-card-ico">👴</div>
+          <div class="pass-card-name">경로</div>
+          <div class="pass-card-desc">만 65세 이상</div>
+        </div>
+        <div class="pass-card" onclick="selPassType('infant')">
+          <div class="pass-card-ico">👶</div>
+          <div class="pass-card-name">유아</div>
+          <div class="pass-card-desc">만 4세 미만</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ★ 장애인 섹션 — 시각적으로 명확하게 구분 -->
+    <div class="pass-section" style="padding-top:0;">
+      <div class="pass-section-title" style="color:var(--dis-purple);">장애인 승객 <span style="font-size:11px;font-weight:500;color:var(--tx2);">추가 인증 절차 필요</span></div>
+
+      <!-- ★ 장애인 예매 단계 안내 박스 -->
+      <div class="dis-extra-steps">
+        <div class="des-hd">
+          <span class="des-hd-ico">♿</span>
+          <div><div class="des-hd-text">장애인 예매 추가 절차 안내</div><div class="des-hd-sub">일반 예매와 다른 단계가 추가됩니다</div></div>
+        </div>
+        <div class="des-steps">
+          <div class="des-step">
+            <div class="des-step-num">1</div>
+            <div class="des-step-body">
+              <div class="des-step-title">장애 구분 선택</div>
+              <div class="des-step-desc">중증(1~3급) 또는 경증(4~6급) 선택<br>할인율이 다릅니다</div>
+              <span class="des-step-diff diff-added">★ 장애인 전용 추가 단계</span>
+            </div>
+          </div>
+          <div class="des-step-connector"></div>
+          <div class="des-step">
+            <div class="des-step-num">2</div>
+            <div class="des-step-body">
+              <div class="des-step-title">복지카드 인증</div>
+              <div class="des-step-desc">복지카드를 리더기에 인식<br>보건복지부 시스템 연동 확인</div>
+              <span class="des-step-diff diff-added">★ 장애인 전용 추가 단계</span>
+            </div>
+          </div>
+          <div class="des-step-connector"></div>
+          <div class="des-step">
+            <div class="des-step-num" style="background:var(--kr-green);">3</div>
+            <div class="des-step-body">
+              <div class="des-step-title">보호자 동반 여부 <span style="color:var(--g4);font-weight:500;">(중증만)</span></div>
+              <div class="des-step-desc">중증 장애인은 보호자 1인 동반 시<br>보호자도 50% 할인 적용</div>
+              <span class="des-step-diff diff-added">★ 중증 한정 추가 단계</span>
+            </div>
+          </div>
+          <div class="des-step-connector"></div>
+          <div class="des-step">
+            <div class="des-step-num" style="background:var(--kr-navy);">4</div>
+            <div class="des-step-body">
+              <div class="des-step-title">이후 일반 예매와 동일</div>
+              <div class="des-step-desc">출발역→도착역→날짜→열차→좌석→결제<br>장애인석 우선 표시</div>
+              <span class="des-step-diff diff-normal">일반 예매와 동일</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pass-grid" style="margin-top:12px;">
+        <div class="pass-card dis-card ${S.disGrade==='heavy'?'sel':''}" onclick="selDisGrade('heavy')">
+          <div class="pass-check">✓</div>
+          <span class="pass-card-badge badge-purple">50%</span>
+          <div class="pass-card-ico">♿</div>
+          <div class="pass-card-name">중증 장애인</div>
+          <div class="pass-card-desc" style="color:var(--dis-purple);font-weight:700;">구 1~3급</div>
+          <div class="pass-card-desc">본인 + 보호자 1인</div>
+        </div>
+        <div class="pass-card dis-card ${S.disGrade==='light'?'sel':''}" onclick="selDisGrade('light')">
+          <div class="pass-check">✓</div>
+          <span class="pass-card-badge badge-blue">30%</span>
+          <div class="pass-card-ico">🦽</div>
+          <div class="pass-card-name">경증 장애인</div>
+          <div class="pass-card-desc" style="color:var(--kr-blue);font-weight:700;">구 4~6급</div>
+          <div class="pass-card-desc">본인만 할인</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 16px 18px;">
+      <button class="kr-next-btn" onclick="goScr('dis_auth')" ${S.disGrade?'':'disabled'}>
+        다음 → 복지카드 인증
+      </button>
+    </div>
+  </div>`;
+}
+
+function selPassType(t){
+  S.disGrade=null;S.fromDisabled=false;
+  goScr('station');
+}
+function selDisGrade(g){
+  S.disGrade=g;S.disVerified=false;S.withGuardian=false;
+  render();
+}
+
+/* ================================================================
+   DIS AUTH (복지카드 인증)
+   ================================================================ */
+function r_dis_auth(b){
+  const gradeText=S.disGrade==='heavy'?'중증 장애인 (구 1~3급)':'경증 장애인 (구 4~6급)';
+  const discount=S.disGrade==='heavy'?'50%':'30%';
+  b.innerHTML=`<div class="sc-dis">
+    <div class="kr-page-hd">
+      <button class="kr-back-btn" onclick="goScr('passenger')">←</button>
+      <div><div class="kr-page-title">장애인 인증</div><div class="kr-page-sub">${gradeText} · ${discount} 할인</div></div>
+    </div>
+    <div class="dis-grade-section">
+      <!-- 선택된 등급 확인 -->
+      <div class="dis-grade-cards">
+        <div class="dis-grade-card sel">
+          <div class="dgc-ico">${S.disGrade==='heavy'?'♿':'🦽'}</div>
+          <div class="dgc-body">
+            <div class="dgc-name">${gradeText}</div>
+            <div class="dgc-grade">등록 장애인 ${S.disGrade==='heavy'?'중증 (구 1~3급)':'경증 (구 4~6급)'}</div>
+            <div class="dgc-discount ${S.disGrade}">
+              💰 운임 <strong>${discount} 할인</strong>
+              ${S.disGrade==='heavy'?'(주중 한정)':'(주중 한정)'}
+            </div>
+            ${S.disGrade==='heavy'?'<div class="dgc-guardian">👥 보호자 1인 동반 시 보호자도 50% 할인</div>':''}
+          </div>
+        </div>
+      </div>
+
+      <!-- 복지카드 인증 -->
+      <div class="welfare-card-box">
+        <div class="wcb-hd"><span class="wcb-hd-ico">💳</span><span class="wcb-hd-text">복지카드 인증</span></div>
+        <div class="wcb-body">
+          <div class="wcb-reader ${S.disVerified?'':''}${S.disVerified?'style="display:none"':''}" 
+               id="wcb-reader" onclick="verifyWelfare()" 
+               ${S.disVerified?'style="display:none;"':''}>
+            <div class="wcb-reader-ico">💳</div>
+            <div class="wcb-reader-text">복지카드를 리더기에 인식하세요</div>
+            <div class="wcb-reader-sub">카드 뒷면을 아래 방향으로 삽입해주세요</div>
+          </div>
+          <div class="wcb-verified ${S.disVerified?'show':''}" id="wcb-verified">
+            <span class="wcb-verified-ico">✅</span>
+            <div>
+              <div class="wcb-verified-name">인증 완료</div>
+              <div class="wcb-verified-info">보건복지부 시스템 연동 확인됨</div>
+            </div>
+          </div>
+          <div class="wcb-note" style="margin-top:10px;">
+            💡 복지카드 또는 장애인 등록증 제시 필요<br>
+            • 키오스크에서 직접 카드 리더기 인식<br>
+            • 승차 후 승무원 요청 시 카드 제시 필요
+          </div>
+        </div>
+      </div>
+
+      <!-- 보호자 여부 (중증만) -->
+      ${S.disGrade==='heavy'?`
+      <div class="guardian-box" id="guardian-box">
+        <div class="guardian-title">👥 보호자 동반 여부</div>
+        <div class="guardian-opts">
+          <div class="guardian-opt ${S.withGuardian?'sel':''}" onclick="setGuardian(true)">
+            <div class="guardian-opt-ico">👥</div>
+            <div class="guardian-opt-text">보호자 동반</div>
+            <div class="guardian-opt-sub">보호자도 50% 할인</div>
+          </div>
+          <div class="guardian-opt ${!S.withGuardian?'sel':''}" onclick="setGuardian(false)">
+            <div class="guardian-opt-ico">🧍</div>
+            <div class="guardian-opt-text">혼자 여행</div>
+            <div class="guardian-opt-sub">본인만 할인 적용</div>
+          </div>
+        </div>
+      </div>`:''}
+    </div>
+    <div style="padding:0 16px 18px;">
+      <button class="kr-next-btn" onclick="goScr('station')" ${S.disVerified?'':'disabled'}>
+        다음 → 출발역·도착역 선택
+      </button>
+    </div>
+  </div>`;
+}
+
+function verifyWelfare(){
+  showToast('💳 복지카드 인증 중...');
+  setTimeout(()=>{
+    S.disVerified=true;
+    const reader=document.getElementById('wcb-reader');
+    const verified=document.getElementById('wcb-verified');
+    if(reader) reader.style.display='none';
+    if(verified) verified.classList.add('show');
+    const btn=document.querySelector('.kr-next-btn');
+    if(btn) btn.disabled=false;
+    showToast('✅ 인증 완료!');
+  },1200);
+}
+function setGuardian(v){S.withGuardian=v;render();}
+
+/* ================================================================
+   STATION
+   ================================================================ */
+function r_station(b){
+  const stationBtns=Object.entries(STATIONS_BY_REGION).map(([region,stations])=>{
+    if(region!==S.stationRegion) return '';
+    return stations.map(s=>`
+      <button class="station-btn ${(S.fromSelecting?S.from:S.to)===s?'sel':''}" onclick="selStation('${s}')">
+        <div class="station-btn-name">${s}</div>
+        <div class="station-btn-eng">${STATION_ENG[s]||''}</div>
+      </button>`).join('');
+  }).join('');
+  const regionTabs=Object.keys(STATIONS_BY_REGION).map(r=>
+    `<div class="station-tab ${r===S.stationRegion?'act':''}" onclick="setStationRegion('${r}')">${r}</div>`).join('');
+
+  b.innerHTML=`<div class="sc-station">
+    <div class="kr-page-hd">
+      <button class="kr-back-btn" onclick="goScr(${S.mode==='disabled'?'\'dis_auth\'':'\'idle\''})">←</button>
+      <div><div class="kr-page-title">${S.fromSelecting?'출발역':'도착역'} 선택</div></div>
+    </div>
+    <div class="station-route-bar">
+      <div class="srb-from">
+        <div class="srb-label">출발</div>
+        <div class="srb-name" style="${S.fromSelecting?'color:var(--kr-blue);':''}">${S.from}</div>
+      </div>
+      <div class="srb-arrow">→</div>
+      <div class="srb-from">
+        <div class="srb-label">도착</div>
+        <div class="srb-name" style="${!S.fromSelecting?'color:var(--kr-blue);':''}">${S.to}</div>
+      </div>
+      <button class="srb-swap" onclick="toggleFromTo()">⇄</button>
+    </div>
+    <div class="station-tabs">${regionTabs}</div>
+    <div class="station-grid">${stationBtns}</div>
+    <button class="station-confirm-btn" onclick="confirmStation()">확인 →</button>
+  </div>`;
+}
+
+function setStationRegion(r){S.stationRegion=r;render();}
+function toggleFromTo(){S.fromSelecting=!S.fromSelecting;render();}
+function selStation(s){
+  if(S.fromSelecting) S.from=s;
+  else S.to=s;
+  render();
+}
+function confirmStation(){
+  if(S.from===S.to){showToast('출발역과 도착역이 같습니다');return;}
+  if(S.fromSelecting){S.fromSelecting=false;render();}
+  else{goScr('date');}
+}
+
+/* ================================================================
+   DATE
+   ================================================================ */
+function r_date(b){
+  const now=new Date();
+  const year=now.getFullYear(), month=now.getMonth();
+  const firstDay=new Date(year,month,1).getDay();
+  const lastDate=new Date(year,month+1,0).getDate();
+  const days=['일','월','화','수','목','금','토'];
+  let calCells='';
+  for(let i=0;i<firstDay;i++) calCells+=`<button class="cal-day other-month" disabled></button>`;
+  for(let d=1;d<=lastDate;d++){
+    const date=new Date(year,month,d);
+    const isToday=d===now.getDate();
+    const isSel=S.selDate===d;
+    const isPast=d<now.getDate();
+    const isSun=date.getDay()===0;
+    const isSat=date.getDay()===6;
+    calCells+=`<button class="cal-day ${isToday?'today':''} ${isSel?'sel':''} ${isSun?'sun':''} ${isSat?'sat':''}" 
+      onclick="selDate(${d})" ${isPast?'disabled':''}>
+      ${d}
+    </button>`;
+  }
+  const timeSlots=['전체','오전(~12시)','오후(12~18시)','저녁(18시~)'];
+  b.innerHTML=`<div class="sc-date">
+    <div class="kr-page-hd">
+      <button class="kr-back-btn" onclick="goScr('station')">←</button>
+      <div><div class="kr-page-title">날짜 · 시간 선택</div></div>
+    </div>
+    <div class="date-calendar">
+      <div class="cal-month-nav">
+        <button class="cal-nav-btn">‹</button>
+        <div class="cal-month">${year}년 ${month+1}월</div>
+        <button class="cal-nav-btn">›</button>
+      </div>
+      <div class="cal-weekdays">
+        ${days.map((d,i)=>`<div class="cal-wd ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('')}
+      </div>
+      <div class="cal-days">${calCells}</div>
+    </div>
+    <div class="time-section">
+      <div class="time-label">출발 시간대</div>
+      <div class="time-grid">
+        ${timeSlots.map(t=>`<button class="time-btn ${S.selTimeSlot===t?'sel':''}" onclick="selTimeSlot('${t}')">${t}</button>`).join('')}
+      </div>
+    </div>
+    <div style="padding:14px 16px;">
+      <button class="kr-next-btn" onclick="goScr('trains')" ${S.selDate?'':'disabled'}>
+        열차 조회 →
+      </button>
+    </div>
+  </div>`;
+}
+function selDate(d){S.selDate=d;render();}
+function selTimeSlot(t){S.selTimeSlot=t;render();}
+
+/* ================================================================
+   TRAINS
+   ================================================================ */
+function r_trains(b){
+  const now=new Date();
+  const dateStr=`${now.getMonth()+1}/${S.selDate||now.getDate()}`;
+  const types=['전체 열차','KTX','ITX-새마을','무궁화'];
+  const cards=TRAINS.map(tr=>{
+    const seats=tr.seats;
+    const seatsLabel=seats===0?`<span class="seats-none">매진</span>`:seats<10?`<span class="seats-few">잔여 ${seats}석</span>`:`<span class="seats-ok">잔여 ${seats}석</span>`;
+    const disPrice=S.mode==='disabled'&&S.disGrade?calcDisPrice(tr.price):null;
+    return `
+      <div class="train-card ${S.selTrain?.id===tr.id?'sel':''}" onclick="selTrain('${tr.id}')">
+        <div class="tc-type"><span class="tc-type-badge ${tr.badge}">${tr.type.split('-')[0]}</span></div>
+        <div class="tc-times">
+          <div>
+            <span class="tc-depart">${tr.depart}</span>
+            <span class="tc-arrow">→</span>
+            <span class="tc-arrive">${tr.arrive}</span>
+          </div>
+          <div class="tc-duration">소요 ${tr.duration}</div>
+        </div>
+        <div class="tc-right">
+          <div class="tc-price">${disPrice?`<del style="font-size:12px;color:var(--g3);font-weight:500;">${tr.price.toLocaleString()}원</del>`:''}</div>
+          <div class="tc-price" style="${disPrice?'color:var(--dis-purple);font-size:18px;':''}">
+            ${(disPrice||tr.price).toLocaleString()}원
+          </div>
+          ${disPrice?`<div class="tc-dis-price">♿ ${S.disGrade==='heavy'?'50':'30'}% 할인</div>`:''}
+          <div class="tc-seats">${seatsLabel}</div>
+        </div>
+      </div>`;
+  });
+  b.innerHTML=`<div class="sc-trains">
+    <div class="train-route-hd">
+      <button class="kr-back-btn" style="background:transparent;border-color:rgba(255,255,255,.3);color:white;" onclick="goScr('date')">←</button>
+      <span class="trh-route">&nbsp;${S.from} → ${S.to}</span>
+      <span class="trh-date">${dateStr}</span>
+    </div>
+    <div class="train-filter-tabs">
+      ${types.map((t,i)=>`<div class="tft ${i===0?'act':''}" onclick="this.parentElement.querySelectorAll('.tft').forEach(x=>x.classList.remove('act'));this.classList.add('act')">${t}</div>`).join('')}
+    </div>
+    <div class="train-list">${cards.join('')}</div>
+    <button class="train-select-btn" onclick="confirmTrain()" ${S.selTrain?'':'disabled'}>
+      🎫 선택 열차 예약하기
+    </button>
+  </div>`;
+}
+function selTrain(id){S.selTrain=TRAINS.find(t=>t.id===id)||null;render();}
+function confirmTrain(){if(S.selTrain){S.seats=genSeats(S.mode==='disabled');S.selSeats=[];goScr('seat');}}
+
+/* ================================================================
+   SEAT
+   ================================================================ */
+function r_seat(b){
+  const tr=S.selTrain;
+  const carNum=tr?.car||3;
+  const cars=Array.from({length:6},(_,i)=>i+1);
+  const cols=['A','B','C','D'];
+  const colLabels=`
+    <div class="seat-col-labels">
+      <div class="scl">A</div><div class="scl">B</div>
+      <div class="scl-aisle"></div>
+      <div class="scl">C</div><div class="scl">D</div>
+    </div>`;
+  const rows=S.seats.map((row,ri)=>{
+    const cells=row.map(cell=>{
+      let cls=cell.status;
+      if(S.selSeats.find(s=>s===cell.id)){
+        cls=cell.isDis?'dis-sel':'sel';
+      }
+      const isB=cell.col==='B';
+      const isC=cell.col==='C';
+      return `${isC?'<div class="seat-aisle"></div>':''}<div class="seat-cell ${cls}" onclick="toggleSeat('${cell.id}')">${cell.id}</div>`;
+    });
+    return `<div class="seat-row">
+      <div class="seat-row-num">${ri+1}</div>
+      ${cells.join('')}
+    </div>`;
+  }).join('');
+
+  const selInfo=S.selSeats.length>0
+    ?`<div class="seat-selected-bar"><span class="ssb-icon">🎫</span><span class="ssb-text">${S.selSeats.join(', ')} 선택됨 · ${carNum}호차</span><button class="ssb-clear" onclick="S.selSeats=[];render()">취소</button></div>`
+    :'';
+  b.innerHTML=`<div class="sc-seat">
+    <div class="seat-train-info">
+      <span class="sti-type tc-type-badge ${tr?.badge||'ktx'}">${tr?.type||'KTX'}</span>
+      <span class="sti-route">${S.from} → ${S.to}</span>
+      <span class="sti-time">${tr?.depart||''} 출발</span>
+    </div>
+    <div class="seat-car-tabs">
+      ${cars.map(c=>`<div class="sct ${c===carNum?'act':''}">${c}호차${c===carNum?'':''}</div>`).join('')}
+    </div>
+    <div class="seat-map-wrap">
+      <div class="seat-direction">
+        <span class="sd-label">${carNum}호차 좌석 배치</span>
+        <span class="sd-dir">🚄 진행방향</span>
+      </div>
+      ${S.mode==='disabled'?`<div style="background:var(--dis-purple-light);border:1px solid var(--dis-purple-mid);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--dis-purple);">♿ 1~2열 : 장애인 전용 좌석 우선 배정</div>`:''}
+      <div class="seat-legend">
+        <div class="sl-item"><div class="sl-box sl-avail"></div>일반석</div>
+        ${S.mode==='disabled'?'<div class="sl-item"><div class="sl-box sl-dis"></div>장애인석</div>':''}
+        <div class="sl-item"><div class="sl-box sl-sel"></div>선택</div>
+        <div class="sl-item"><div class="sl-box sl-sold"></div>매진</div>
+      </div>
+      ${colLabels}
+      <div class="seat-car-layout">${rows}</div>
+    </div>
+    ${selInfo}
+    <button class="seat-reserve-btn" onclick="goScr('payment')" ${S.selSeats.length>0?'':'disabled'}>
+      선택 좌석 예약하기 (${S.selSeats.length}석)
+    </button>
+  </div>`;
+}
+
+function toggleSeat(id){
+  const cell=S.seats.flat().find(c=>c.id===id);
+  if(!cell||cell.status==='sold') return;
+  const idx=S.selSeats.indexOf(id);
+  if(idx>=0){S.selSeats.splice(idx,1);}
+  else if(S.selSeats.length<1){S.selSeats.push(id);}
+  else{S.selSeats=[id];}
+  render();
+}
+
+/* ================================================================
+   PAYMENT
+   ================================================================ */
+function r_payment(b){
+  const tr=S.selTrain;
+  const basePrice=tr?.price||59800;
+  const finalPrice=S.mode==='disabled'&&S.disGrade?calcDisPrice(basePrice):basePrice;
+  const guardianPrice=(S.mode==='disabled'&&S.disGrade==='heavy'&&S.withGuardian)?finalPrice:0;
+  const totalPrice=finalPrice+guardianPrice;
+  const paxInfo=S.mode==='disabled'
+    ?`${S.disGrade==='heavy'?'중증 장애인':'경증 장애인'}${S.withGuardian?' + 보호자 1인':''}`
+    :'어른 1명';
+  const now=new Date();
+
+  b.innerHTML=`<div class="sc-pay">
+    <div class="kr-page-hd">
+      <button class="kr-back-btn" onclick="goScr('seat')">←</button>
+      <div><div class="kr-page-title">예매 정보 확인 · 결제</div></div>
+    </div>
+    <!-- ★ 핵심 승차권 정보 확인 영역 -->
+    <div class="ticket-summary">
+      <div class="ts-title">📋 예매 정보 확인</div>
+      <div class="ts-card">
+        <div class="ts-card-hd">
+          <span class="tsch-type">${tr?.type||'KTX'}</span>
+          <span class="tsch-num">열차 ${tr?.id?.replace('k','').replace('i','').replace('m','')||'101'}호</span>
+        </div>
+        <div class="ts-info-grid">
+          <div class="ts-info-item">
+            <div class="ts-info-label">출발역</div>
+            <div class="ts-info-val">${S.from}</div>
+          </div>
+          <div class="ts-info-item">
+            <div class="ts-info-label">도착역</div>
+            <div class="ts-info-val">${S.to}</div>
+          </div>
+          <div class="ts-info-item">
+            <div class="ts-info-label">출발 시각</div>
+            <div class="ts-info-val highlight">${tr?.depart||'07:00'}</div>
+          </div>
+          <div class="ts-info-item">
+            <div class="ts-info-label">도착 시각</div>
+            <div class="ts-info-val">${tr?.arrive||'08:30'}</div>
+          </div>
+          <div class="ts-info-item">
+            <div class="ts-info-label">호차 · 좌석</div>
+            <div class="ts-info-val highlight">${tr?.car||3}호차 ${S.selSeats[0]||'--'}</div>
+            <div class="ts-info-sub">${S.mode==='disabled'&&S.selSeats[0]&&parseInt(S.selSeats[0])<3?'♿ 장애인 전용석':'일반석'}</div>
+          </div>
+          <div class="ts-info-item">
+            <div class="ts-info-label">승객</div>
+            <div class="ts-info-val" style="font-size:12px;">${paxInfo}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    ${S.mode==='disabled'&&S.disGrade?`
+    <div class="ts-dis-banner">
+      <span class="tdb-ico">♿</span>
+      <div>
+        <div class="tdb-text">${S.disGrade==='heavy'?'중증 장애인 50% 할인 적용':'경증 장애인 30% 할인 적용'}</div>
+        <div class="tdb-sub">정상가 ${basePrice.toLocaleString()}원 → 할인가 ${finalPrice.toLocaleString()}원${S.withGuardian?` · 보호자 ${guardianPrice.toLocaleString()}원`:''}</div>
+      </div>
+    </div>`:''}
+    <div class="pay-methods-section">
+      <div style="font-size:13px;font-weight:700;color:var(--kr-blue);margin-bottom:10px;">결제 수단</div>
+      <div class="pay-methods">
+        ${[{ico:'💳',nm:'신용/체크카드',ds:'삼성페이·LG페이도 가능'},{ico:'💵',nm:'현금',ds:'현금 투입구에 삽입'},{ico:'🎁',nm:'철도 상품권',ds:'상품권 바코드 스캔'}]
+          .map((p,i)=>`
+          <div class="pay-m ${S.payMethod===i?'sel':''}" onclick="selPay(${i})">
+            <span class="pay-m-ico">${p.ico}</span>
+            <div><div class="pay-m-nm">${p.nm}</div><div class="pay-m-ds">${p.ds}</div></div>
+            <div class="pay-m-chk">✓</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="pay-total-row">
+      <span class="ptr-l">총 결제 금액</span>
+      <span class="ptr-n">${totalPrice.toLocaleString()}원</span>
+    </div>
+    <button class="pay-confirm-btn" onclick="goScr('done')" ${S.payMethod!==null?'':'disabled'}>
+      💳 결제 완료 (시뮬레이션)
+    </button>
+  </div>`;
+}
+function selPay(i){S.payMethod=i;render();}
+
+/* ================================================================
+   DONE (완료 + 승차권)
+   ================================================================ */
+function r_done(b){
+  const tr=S.selTrain;
+  const basePrice=tr?.price||59800;
+  const finalPrice=S.mode==='disabled'&&S.disGrade?calcDisPrice(basePrice):basePrice;
+  const guardianPrice=(S.mode==='disabled'&&S.disGrade==='heavy'&&S.withGuardian)?finalPrice:0;
+  const totalPrice=finalPrice+guardianPrice;
+  const now=new Date();
+  const dateStr=`2026.${String(now.getMonth()+1).padStart(2,'0')}.${String(S.selDate||now.getDate()).padStart(2,'0')}`;
+  const ticketNum=`${Math.floor(Math.random()*9000)+1000}-${Math.floor(Math.random()*9000)+1000}-${Math.floor(Math.random()*9000)+1000}`;
+  const isDisSeat=S.mode==='disabled'&&S.selSeats[0]&&parseInt(S.selSeats[0])<=2;
+  const paxInfo=S.mode==='disabled'
+    ?`${S.disGrade==='heavy'?'중증 장애인':'경증 장애인'}${S.withGuardian?' + 보호자 1인':''}`
+    :'어른 1명';
+
+  S.ticketData={tr,basePrice,finalPrice,totalPrice,dateStr,ticketNum,isDisSeat,paxInfo};
+  S.stats.trials++;updateStats();
+
+  // 랜덤 바코드 바 생성
+  const bars=Array.from({length:50},()=>{
+    const w=Math.random()<0.3?2:1;
+    const gap=Math.random()<0.4?2:1;
+    return `<div class="tqr-bar" style="width:${w}px;margin-right:${gap}px;"></div>`;
+  }).join('');
+
+  b.innerHTML=`<div class="sc-done">
+    <div class="done-top">
+      <div class="done-check">✅</div>
+      <div class="done-title">예매 완료!</div>
+      <div class="done-sub">승차권이 발권되었습니다</div>
+    </div>
+    <div class="ticket-wrap">
+      <div class="ticket">
+        <div class="ticket-hd">
+          <span class="th-logo">KORAIL</span>
+          <span class="th-type tc-type-badge ${tr?.badge||'ktx'}">${tr?.type||'KTX'}</span>
+        </div>
+        <!-- 노선 정보 -->
+        <div class="ticket-route">
+          <div class="tr-row">
+            <span class="tr-station">${S.from}</span>
+            <span class="tr-arrow">→</span>
+            <span class="tr-station">${S.to}</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:10px;">
+            <span class="tr-depart-time">${tr?.depart||'07:00'} 출발</span>
+            <span class="tr-arrive-time">→ ${tr?.arrive||'08:30'} 도착</span>
+          </div>
+          <div class="tr-date">📅 ${dateStr} (${tr?.duration||'1시간 35분'})</div>
+        </div>
+        <!-- ★★★ 좌석 정보 — WM 훈련 핵심 -->
+        <div class="ticket-seat-section">
+          <div class="tss-label">🎫 좌석 정보 — 꼭 기억하세요!</div>
+          <div class="tss-cards">
+            <div class="tss-card ${isDisSeat?'dis-seat-card':''}">
+              <div class="tss-car">${tr?.car||3}호차</div>
+              <div class="tss-seat-num">${S.selSeats[0]||'--'}</div>
+              <div class="tss-seat-sub">창측 / 순방향</div>
+              <span class="tss-seat-type ${isDisSeat?'dis':'normal'}">${isDisSeat?'♿ 장애인석':'일반석'}</span>
+            </div>
+            ${S.withGuardian&&S.mode==='disabled'?`
+            <div class="tss-card">
+              <div class="tss-car">${tr?.car||3}호차</div>
+              <div class="tss-seat-num">${S.selSeats[0]?.replace(/[A-D]/,c=>c==='A'?'B':c==='B'?'A':c==='C'?'D':'C')||'--'}</div>
+              <div class="tss-seat-sub">보호자 좌석</div>
+              <span class="tss-seat-type normal">보호자</span>
+            </div>`:''}
+          </div>
+        </div>
+        <!-- 여객 정보 -->
+        <div class="ticket-pax">
+          <div class="tp-row"><span class="tp-label">승객</span><span class="tp-val">${paxInfo}</span></div>
+          <div class="tp-row"><span class="tp-label">열차</span><span class="tp-val">${tr?.type||'KTX'} ${tr?.id?.toUpperCase()||'K101'}</span></div>
+          <div class="tp-row"><span class="tp-label">운임</span><span class="tp-val price">${totalPrice.toLocaleString()}원${S.mode==='disabled'&&S.disGrade?` (${S.disGrade==='heavy'?'50':'30'}% 할인 적용)`:''}</span></div>
+        </div>
+        <!-- 바코드 -->
+        <div class="ticket-qr">
+          <div class="tqr-num">${ticketNum}</div>
+          <div class="tqr-barcode">${bars}</div>
+          <div class="tqr-note">승차 전 승무원에게 제시하세요</div>
+        </div>
+      </div>
+    </div>
+    ${S.mode==='disabled'?`
+    <div class="dis-caution-box">
+      <div class="dcb-title">♿ 장애인 이용 안내</div>
+      <div class="dcb-item">복지카드를 반드시 지참하세요</div>
+      <div class="dcb-item">승무원 요청 시 카드 제시 필요</div>
+      <div class="dcb-item">주말·공휴일은 할인 미적용</div>
+    </div>`:''}
+    <div class="done-btns">
+      <button class="done-quiz-btn" onclick="startQuiz()">🧠 기억 확인</button>
+      <button class="done-home-btn" onclick="resetAll()">🔄 처음으로</button>
+    </div>
+  </div>`;
+}
+
+/* ================================================================
+   QUIZ — 좌석·일정 확인
+   ================================================================ */
+let quizList=[], quizCur=0, quizCorrect=0;
+
+function startQuiz(){
+  const d=S.ticketData;if(!d) return;
+  const tr=d.tr;
+  quizList=[];quizCur=0;quizCorrect=0;
+
+  // Q1: 좌석 번호
+  const correctSeat=S.selSeats[0]||'7A';
+  const wrongSeats=['2B','5C','9D','4A','6B','3C'].filter(s=>s!==correctSeat).slice(0,3);
+  quizList.push({
+    q:'예매한 좌석 번호는?',s:'방금 발권된 승차권의 좌석을 떠올려보세요',
+    choices:[...wrongSeats,correctSeat].sort(()=>Math.random()-.5).map(s=>({text:s,correct:s===correctSeat})),
+  });
+
+  // Q2: 출발 시각
+  const correctTime=tr?.depart||'07:00';
+  const wrongTimes=['06:00','08:00','09:30','10:00','11:30'].filter(t=>t!==correctTime).slice(0,3);
+  quizList.push({
+    q:'출발 시각은 언제인가요?',s:'승차권의 출발 시각을 기억해 보세요',
+    choices:[...wrongTimes,correctTime].sort(()=>Math.random()-.5).map(t=>({text:t,correct:t===correctTime})),
+  });
+
+  // Q3: 호차 번호
+  if(S.difficulty!=='e'){
+    const correctCar=`${tr?.car||3}호차`;
+    const wrongCars=['2호차','4호차','5호차','6호차'].filter(c=>c!==correctCar).slice(0,3);
+    quizList.push({
+      q:'몇 호차에 탑승하나요?',s:'승차권의 호차 번호를 기억해 보세요',
+      choices:[...wrongCars,correctCar].sort(()=>Math.random()-.5).map(c=>({text:c,correct:c===correctCar})),
+    });
+  }
+
+  // Q4 (장애인 + 어려움): 할인율
+  if(S.mode==='disabled'&&S.difficulty==='h'){
+    const correctDiscount=S.disGrade==='heavy'?'50% 할인':'30% 할인';
+    const wrongDiscounts=['10% 할인','20% 할인','40% 할인'].filter(d=>d!==correctDiscount).slice(0,3);
+    quizList.push({
+      q:'적용된 장애인 할인율은?',s:'장애인 등급에 따른 할인율을 기억하세요',
+      choices:[...wrongDiscounts,correctDiscount].sort(()=>Math.random()-.5).map(d=>({text:d,correct:d===correctDiscount})),
+    });
+  }
+
+  showNextQuiz();
+}
+
+function showNextQuiz(){
+  if(quizCur>=quizList.length){
+    document.getElementById('quiz-ov').classList.remove('show');
+    S.stats.correct+=quizCorrect;updateStats();
+    showToast(`🧠 퀴즈 완료! ${quizCorrect}/${quizList.length} 정답`);
+    return;
+  }
+  const q=quizList[quizCur];
+  document.getElementById('quiz-t').textContent=q.q;
+  document.getElementById('quiz-s').textContent=q.s;
+  document.getElementById('quiz-choices').innerHTML=q.choices.map(c=>`
+    <button class="qc" onclick="ansQ(this,${c.correct})" data-c="${c.correct}">${c.text}</button>`).join('');
+  document.getElementById('qfb').className='qfb';
+  document.getElementById('qnxt').className='qnxt';
+  document.getElementById('quiz-ov').classList.add('show');
+}
+
+function ansQ(el,ok){
+  document.querySelectorAll('.qc').forEach(b=>{b.disabled=true;if(b.dataset.c==='true')b.classList.add('ok');});
+  if(!ok) el.classList.add('no');
+  const fb=document.getElementById('qfb');
+  if(ok){fb.textContent='🎉 정답! 잘 기억하고 있어요!';fb.className='qfb show g';quizCorrect++;}
+  else{fb.textContent='🤔 아쉬워요! 승차권을 다시 확인해보세요!';fb.className='qfb show b';}
+  document.getElementById('qnxt').className='qnxt show';
+}
+function nextQuiz(){quizCur++;showNextQuiz();}
+function closeQuiz(){document.getElementById('quiz-ov').classList.remove('show');}
+
+/* ================================================================
+   CONTROLS
+   ================================================================ */
+function goScr(s){S.screen=s;render();}
+
+function setMode(m, el){
+  S.mode=m;
+  // 버튼 스타일
+  document.getElementById('btn-mode-normal').style.cssText=
+    `padding:10px;border-radius:8px;border:1.5px solid rgba(100,176,255,${m==='normal'?.8:.3});background:rgba(20,100,180,${m==='normal'?.4:.1});color:${m==='normal'?'#6ab0ff':'rgba(255,255,255,.4)'};font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;`;
+  document.getElementById('btn-mode-disabled').style.cssText=
+    `padding:10px;border-radius:8px;border:1.5px solid rgba(107,63,160,${m==='disabled'?.8:.3});background:rgba(107,63,160,${m==='disabled'?.3:.05});color:${m==='disabled'?'#a78ddc':'rgba(255,255,255,.4)'};font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;`;
+  // 상태 초기화
+  S.disGrade=null;S.disVerified=false;S.withGuardian=false;
+  setMission();render();
+  showToast(m==='disabled'?'🟣 장애인석 예매 모드':'🔵 일반석 예매 모드');
+}
+
+function resetAll(){
+  S.screen='idle';S.selTrain=null;S.selSeats=[];S.selDate=null;
+  S.payMethod=null;S.disGrade=null;S.disVerified=false;S.withGuardian=false;
+  S.from='서울';S.to='부산';S.fromSelecting=true;
+  setMission();render();showToast('🔄 새 세션 시작!');
+}
+
+function togPanel(){const p=document.getElementById('tp');const b=document.getElementById('ptbtn');p.classList.toggle('col');b.classList.toggle('open',!p.classList.contains('col'));}
+function togOpt(k,el){S.opts[k]=!S.opts[k];el.classList.toggle('on');if(k==='mission')document.getElementById('wmbar').style.display=S.opts.mission?'block':'none';if(k==='mhide')updateWmBar();}
+function setDiff(d,el){S.difficulty=d;document.querySelectorAll('.dfb').forEach(b=>b.className='dfb');el.className=`dfb a${d}`;document.getElementById('ddt').textContent=DIFF_INFO[d].tag;document.getElementById('ddb').innerHTML=DIFF_INFO[d].desc;setMission();}
+
+function setMission(){
+  const pool=MISSIONS_LIST[S.mode][S.difficulty];
+  S.mission=pool[Math.floor(Math.random()*pool.length)];
+  updateWmBar();
+}
+function updateWmBar(){
+  const t=document.getElementById('wmtask');const r=document.getElementById('wmrev');if(!t)return;
+  t.textContent=S.mission;
+  if(S.opts.mhide){t.classList.add('blr');r.style.display='block';}
+  else{t.classList.remove('blr');r.style.display='none';}
+  document.getElementById('wmbar').style.display=S.opts.mission?'block':'none';
+}
+function revealMs(){const t=document.getElementById('wmtask');const r=document.getElementById('wmrev');t.classList.remove('blr');r.style.display='none';setTimeout(()=>{if(S.opts.mhide){t.classList.add('blr');r.style.display='block';}},3000);}
+function updateStats(){document.getElementById('st-t').textContent=S.stats.trials;document.getElementById('st-c').textContent=S.stats.correct;const p=S.stats.trials>0?Math.round(S.stats.correct/S.stats.trials*100):0;document.getElementById('st-p').textContent=p+'%';}
+
+setMission();render();
+</script>
+</body>
+</html>
