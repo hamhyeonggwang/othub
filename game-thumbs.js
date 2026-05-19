@@ -103,6 +103,23 @@
     '</svg>'
   );
 
+  T.airDrawing = svgDataUri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
+      '<defs>' +
+      '<linearGradient id="adb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#050816"/><stop offset="100%" stop-color="#0a1628"/></linearGradient>' +
+      '<filter id="glow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      '</defs>' +
+      '<rect width="400" height="300" fill="url(#adb)"/>' +
+      '<path d="M0 60 H400 M0 120 H400 M0 180 H400 M0 240 H400 M80 0 V300 M160 0 V300 M240 0 V300 M320 0 V300" stroke="rgba(0,243,255,.06)" stroke-width="1"/>' +
+      '<path d="M72 200 Q120 120 168 152 T248 88 T328 128" fill="none" stroke="#00f3ff" stroke-width="4" stroke-linecap="round" filter="url(#glow)"/>' +
+      '<path d="M248 88 Q268 72 288 96" fill="none" stroke="#ff0055" stroke-width="3" stroke-linecap="round" opacity=".85"/>' +
+      '<text x="200" y="52" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#00f3ff" letter-spacing=".12em">NEON AIR DRAW</text>' +
+      '<text x="200" y="200" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" font-weight="800" fill="#fff">에어 드로잉</text>' +
+      '<text x="200" y="228" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#94a3b8">손 제스처 · 공중 캔버스</text>' +
+      '<text x="200" y="268" text-anchor="middle" font-size="28">✋</text>' +
+    '</svg>'
+  );
+
   T.colorTray = svgDataUri(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
       '<defs>' +
@@ -146,6 +163,32 @@
       '<text x="200" y="134" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="800" fill="#fff">작업치료학회</text>' +
       '<text x="200" y="188" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="rgba(255,255,255,.92)">ksotcs.kr</text>' +
       '<text x="200" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="rgba(255,255,255,.8)">학회 · 정보 · 교육</text>' +
+    '</svg>'
+  );
+
+  T.kasdrSite = svgDataUri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
+      '<defs><linearGradient id="kd" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#059669"/><stop offset="100%" stop-color="#047857"/></linearGradient></defs>' +
+      '<rect width="400" height="300" fill="url(#kd)"/>' +
+      '<rect x="72" y="56" width="256" height="108" rx="14" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.35)"/>' +
+      '<text x="200" y="96" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="800" fill="#fff">대한감각발달</text>' +
+      '<text x="200" y="122" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="800" fill="#fff">재활협회</text>' +
+      '<text x="200" y="152" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="rgba(255,255,255,.88)">일상 적응 · 사회 참여 지원</text>' +
+      '<text x="200" y="188" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="rgba(255,255,255,.92)">kasdr.or.kr</text>' +
+      '<text x="200" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="rgba(255,255,255,.8)">협회 · 감각발달재활 · 교육</text>' +
+    '</svg>'
+  );
+
+  T.kasiSite = svgDataUri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">' +
+      '<defs><linearGradient id="ka" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#5b21b6"/></linearGradient></defs>' +
+      '<rect width="400" height="300" fill="url(#ka)"/>' +
+      '<rect x="64" y="52" width="272" height="112" rx="14" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.35)"/>' +
+      '<text x="200" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800" fill="#fff">대한감각통합</text>' +
+      '<text x="200" y="118" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="800" fill="#fff">치료학회</text>' +
+      '<text x="200" y="148" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="rgba(255,255,255,.88)">감각, 인식의 문을 여는 열쇠</text>' +
+      '<text x="200" y="188" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="rgba(255,255,255,.92)">kasiorg.org</text>' +
+      '<text x="200" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="rgba(255,255,255,.8)">학회 · 교육 · 저널</text>' +
     '</svg>'
   );
 

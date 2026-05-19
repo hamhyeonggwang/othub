@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON AIR DRAW: Futuristic Hand-Tracking Canvas</title>
+    
+    <!-- 
+    =================================================================================
+    SETUP & RUNNING INSTRUCTIONS:
+    1. Save this entire file with a '.html' extension (e.g., 'air_draw.html').
+    2. Run a local server (required for webcam): `npm start` then open http://localhost:3000
+    3. Do NOT open index.html via file:// — browsers block the camera on local files.
+    3. Ensure you have an active internet connection to load the MediaPipe and Google Font CDNs.
+    4. Grant webcam access permissions when prompted by the browser.
+    5. GESTURE GUIDE:
+       - DRAW: Raise ONLY your Index Finger.
+       - ERASER: Open your entire palm.
+       - PAUSE: Make a closed fist.
+       - CHANGE COLOR: Raise Index and Middle fingers (Two fingers).
+       - CLEAR SCREEN: Give a thumbs-up gesture.
+    =================================================================================
+    -->
+
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- MediaPipe Hands via CDN (camera uses native getUserMedia, not camera_utils) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        /* ==========================================================================
+           CSS DESIGN & NEON CYBERPUNK STYLING
+           ========================================================================== */
+        :root {
+            --bg-color: #050816;
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff0055;
+            --neon-green: #39ff14;
+            --glass-bg: rgba(10, 15, 30, 0.65);
+            --glass-border: rgba(0, 243, 255, 0.2);
+            --font-main: 'Rajdhani', sans-serif;
+            --font-hud: 'Orbitron', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            color: #fff;
+        }
+
+        /* Ambient background grid and animation */
+        .bg-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Main Fullscreen Canvas Layers */
+        #particleCanvas, #paintCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #paintCanvas { z-index: 3; }
+        #particleCanvas { z-index: 2; }
+
+        /* Hidden standard HTML elements */
+        #webcam {
+            transform: scaleX(-1);
+            display: none;
+        }
+
+        /* --------------------------------------------------------------------------
+           INTRO / STARTUP SCREEN
+           -------------------------------------------------------------------------- */
+        #introScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #0f172a 0%, #050816 100%);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #introScreen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .intro-title {
+            font-family: var(--font-hud);
+            font-size: 4rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 30px var(--neon-blue);
+            letter-spacing: 6px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            animation: pulse 2s infinite alternate;
+        }
+
+        .intro-subtitle {
+            font-size: 1.2rem;
+            color: #8ab4f8;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(255, 0, 85, 0.2));
+            border: 2px solid var(--neon-blue);
+            color: #fff;
+            padding: 15px 40px;
+            font-family: var(--font-hud);
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 0 15px var(--glass-border);
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+
+        .start-btn:hover {
+            background: var(--neon-blue);
+            color: var(--bg-color);
+            box-shadow: 0 0 30px var(--neon-blue);
+            transform: translateY(-2px);
+        }
+
+        /* --------------------------------------------------------------------------
+           HUD ELEMENTS (HEADS-UP DISPLAY)
+           -------------------------------------------------------------------------- */
+        .hud-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Interactive controls must override pointer-events */
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Floating Glassmorphism Controls Panel */
+        .control-panel {
+            position: absolute;
+            left: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 300px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,243,255,0.05);
+            transition: opacity 0.3s ease;
+        }
+
+        .panel-section {
+            margin-bottom: 22px;
+        }
+        .panel-section:last-child {
+            margin-bottom: 0;
+        }
+
+        h3 {
+            font-family: var(--font-hud);
+            font-size: 0.9rem;
+            color: #8ab4f8;
+            margin-bottom: 12px;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Sliders configuration */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #a0aec0;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--neon-blue);
+            transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Color Picker Buttons Grid */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        .color-btn {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+        }
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+        .color-btn.active {
+            border-color: #fff;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        /* Functional Button Rows */
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .action-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .action-btn:hover {
+            background: rgba(0, 243, 255, 0.15);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+        .action-btn.active {
+            background: rgba(255, 0, 85, 0.2);
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
+        }
+
+        /* Mini Webcam Mirror Corner Preview */
+        .webcam-container {
+            position: absolute;
+            right: 25px;
+            bottom: 25px;
+            width: 200px;
+            height: 150px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: scaleX(-1); /* Mirror view */
+        }
+        #webcamCanvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Top HUD Telemetry Display */
+        .top-hud {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            right: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-hud);
+        }
+        .sys-status {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            display: flex;
+            gap: 20px;
+        }
+        .sys-status span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+            display: inline-block;
+        }
+
+        /* Dynamic Main Gesture Text Status Display */
+        .gesture-status-box {
+            background: rgba(5, 8, 22, 0.8);
+            border: 2px solid var(--neon-blue);
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.4rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(0,243,255,0.3);
+            text-align: center;
+            min-width: 220px;
+            transition: all 0.2s ease;
+        }
+        .gesture-status-box.active-draw {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+            color: var(--neon-green);
+        }
+        .gesture-status-box.active-erase {
+            border-color: var(--neon-pink);
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+            color: var(--neon-pink);
+        }
+
+        /* Gesture Cheat-Sheet Right Sidebar Panel */
+        .legend-panel {
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 12px;
+            width: 240px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+        .legend-item:last-child { margin-bottom: 0; }
+        .gesture-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--neon-blue);
+            font-size: 1.1rem;
+        }
+
+        /* --------------------------------------------------------------------------
+           ANIMATIONS & RESPONSIVE LAYOUT
+           -------------------------------------------------------------------------- */
+        @keyframes pulse {
+            0% { text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue); }
+            100% { text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue), 0 0 60px var(--neon-blue); }
+        }
+
+        @media (max-width: 900px) {
+            .control-panel {
+                top: auto; bottom: 25px; left: 50%; transform: translateX(-50%);
+                width: 90%; max-width: 450px; flex-direction: row; height: auto;
+                padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+            }
+            .panel-section { margin-bottom: 0; }
+            .legend-panel, .webcam-container { display: none; }
+            .top-hud { flex-direction: column; gap: 10px; }
+        }
+
+        .intro-hint {
+            max-width: 520px;
+            margin: 0 20px 24px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 0, 85, 0.45);
+            background: rgba(255, 0, 85, 0.08);
+            color: #ffb3c9;
+            font-size: 0.95rem;
+            line-height: 1.45;
+            text-align: center;
+        }
+        .intro-hint code {
+            color: var(--neon-blue);
+            font-family: ui-monospace, monospace;
+        }
+
+        #cameraErrorPanel {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(5, 8, 22, 0.92);
+            backdrop-filter: blur(8px);
+        }
+        #cameraErrorPanel.visible { display: flex; }
+        .camera-error-card {
+            max-width: 520px;
+            width: 100%;
+            background: var(--glass-bg);
+            border: 1px solid var(--neon-pink);
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 0 30px rgba(255, 0, 85, 0.25);
+        }
+        .camera-error-card h2 {
+            font-family: var(--font-hud);
+            color: var(--neon-pink);
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+        .camera-error-card p, .camera-error-card li {
+            color: #c8d4e8;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+        .camera-error-card ol {
+            margin: 14px 0 14px 20px;
+        }
+        .camera-error-card code {
+            display: block;
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 6px;
+            color: var(--neon-blue);
+            font-family: ui-monospace, monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+        .camera-error-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Animation Layer Background -->
+    <div class="bg-grid"></div>
+
+    <!-- Canvas Engine Core Elements -->
+    <canvas id="particleCanvas"></canvas>
+    <canvas id="paintCanvas"></canvas>
+    <video id="webcam" autoplay playsinline></video>
+
+    <!-- Splash Screen UI Intro -->
+    <div id="introScreen">
+        <h1 class="intro-title">Neon Air Draw</h1>
+        <p class="intro-subtitle">Next-Gen Motion Canvas Engine</p>
+        <p class="intro-hint" id="secureContextHint" hidden></p>
+        <button class="start-btn" id="startBtn">INITIALIZE ENGINE</button>
+    </div>
+
+    <div id="cameraErrorPanel" role="alertdialog" aria-labelledby="cameraErrorTitle">
+        <div class="camera-error-card">
+            <h2 id="cameraErrorTitle">Camera unavailable</h2>
+            <p id="cameraErrorMessage"></p>
+            <ol id="cameraErrorSteps"></ol>
+            <code id="cameraErrorCommand">npm start</code>
+            <div class="camera-error-actions">
+                <button class="start-btn" type="button" id="cameraErrorRetry">Try again</button>
+                <button class="action-btn interactive" type="button" id="cameraErrorDismiss">Use touch only</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HUD Overlay Overlay Layer -->
+    <div class="hud-overlay">
+        
+        <!-- Top Telemetry Panel Grid Status Area -->
+        <div class="top-hud">
+            <div class="sys-status">
+                <span><div class="status-dot" id="statusDot"></div> Tracking Engine</span>
+                <span id="fpsDisplay">FPS: 00</span>
+            </div>
+            
+            <div class="gesture-status-box interactive" id="gestureStatusText">
+                System Idle
+            </div>
+
+            <div class="sys-status interactive" style="padding:0; background:none; border:none;">
+                <button class="action-btn" id="fullscreenBtn" style="padding: 8px 16px;"><i class="fas fa-expand"></i> Fullscreen</button>
+            </div>
+        </div>
+
+        <!-- Floating Operational Parameter Controls Dashboard Panel -->
+        <div class="control-panel interactive">
+            <div class="panel-section">
+                <h3><i class="fas fa-palette"></i> Neon Palette</h3>
+                <div class="color-grid" id="colorGrid">
+                    <!-- Loaded programmatically dynamically -->
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3><i class="fas fa-sliders-h"></i> Parameters</h3>
+                <div class="slider-container" style="margin-bottom: 12px;">
+                    <div class="slider-label"><span>Brush Radius</span><span id="brushSizeVal">12px</span></div>
+                    <input type="range" id="brushSize" min="4" max="60" value="12">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label"><span>Glow Intensity</span><span id="glowVal">25</span></div>
+                    <input type="range" id="glowIntensity" min="5" max="50" value="25">
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3><i class="fas fa-toggle-on"></i> Core Engine Config</h3>
+                <div class="slider-container" style="margin-bottom: 12px;">
+                    <label class="slider-label" style="flex-direction:row; justify-content:space-between; align-items:center; cursor:pointer;">
+                        <span>Decay Stream (Fade Old Strokes)</span>
+                        <input type="checkbox" id="fadeToggle" checked style="width:auto; cursor:pointer;">
+                    </label>
+                </div>
+                <div class="btn-row">
+                    <button class="action-btn" id="audioToggleBtn"><i class="fas fa-volume-up"></i> FX Audio</button>
+                    <button class="action-btn" id="screenshotBtn"><i class="fas fa-camera"></i> Capture</button>
+                </div>
+                <button class="action-btn" id="clearBtn" style="width:100%; margin-top:10px; background: rgba(255,0,85,0.1); border-color: rgba(255,0,85,0.3);"><i class="fas fa-trash-alt"></i> Force Purge (Clear)</button>
+            </div>
+        </div>
+
+        <!-- Gesture Recognition Translation Key Panel -->
+        <div class="legend-panel">
+            <h3 style="margin-bottom:15px; border-bottom:1px solid rgba(0,243,255,0.2); padding-bottom:5px;">Gesture Interface</h3>
+            <div class="legend-item">
+                <div class="gesture-icon"><i class="fas fa-fingerprint"></i></div>
+                <div><strong>1 Finger</strong><p style="font-size:0.75rem; color:#a0aec0;">Draw Neon Path</p></div>
+            </div>
+            <div class="legend-item">
+                <div class="gesture-icon"><i class="fas fa-hand-paper"></i></div>
+                <div><strong>Open Palm</strong><p style="font-size:0.75rem; color:#a0aec0;">Soft Radiance Eraser</p></div>
+            </div>
+            <div class="legend-item">
+                <div class="gesture-icon"><i class="fas fa-fist-raised"></i></div>
+                <div><strong>Closed Fist</strong><p style="font-size:0.75rem; color:#a0aec0;">Pause Drawing Stream</p></div>
+            </div>
+            <div class="legend-item">
+                <div class="gesture-icon"><i class="fas fa-hand-peace"></i></div>
+                <div><strong>2 Fingers</strong><p style="font-size:0.75rem; color:#a0aec0;">Cycle Neon Palette</p></div>
+            </div>
+            <div class="legend-item">
+                <div class="gesture-icon"><i class="fas fa-thumbs-up"></i></div>
+                <div><strong>Thumbs Up</strong><p style="font-size:0.75rem; color:#a0aec0;">Clear Matrix Frame</p></div>
+            </div>
+        </div>
+
+        <!-- Edge Corner Picture-in-Picture Tracking Reference Output Video Node Frame -->
+        <div class="webcam-container">
+            <canvas id="webcamCanvas"></canvas>
+        </div>
+
+    </div>
+
+    <!-- ==========================================================================
+       JAVASCRIPT APPLICATION CORE LOGIC ENGINE
+       ========================================================================== -->
+    <script>
+        // --- ARCHITECTURE CONSTANTS & CONFIGURATION REGISTRY ---
+        const COLORS = ['#00f3ff', '#ff0055', '#39ff14', '#ff00ff', '#ffff00', '#00ffff', '#ff9900', '#ffffff'];
+        
+        // --- CORE APPLICATION STATES ---
+        let activeColor = COLORS[0];
+        let currentBrushSize = 12;
+        let currentGlow = 25;
+        let isDecayEnabled = true;
+        let isAudioMuted = false;
+        
+        // Kinematic tracking interpolations memory caches
+        let lastX = null;
+        let lastY = null;
+        let strokePointsBuffer = [];
+        let previousGesture = "idle";
+        let trackingActive = false;
+
+        // UI Performance metrics telemetry tracking
+        let fps = 0, lastFrameTime = performance.now(), frameCount = 0;
+
+        // --- DOM ELEMENT EXTENSIONS MAP ---
+        const introScreen = document.getElementById('introScreen');
+        const startBtn = document.getElementById('startBtn');
+        const paintCanvas = document.getElementById('paintCanvas');
+        const paintCtx = paintCanvas.getContext('2d');
+        const particleCanvas = document.getElementById('particleCanvas');
+        const particleCtx = particleCanvas.getContext('2d');
+        const webcamVideo = document.getElementById('webcam');
+        const webcamCanvas = document.getElementById('webcamCanvas');
+        const webcamCtx = webcamCanvas.getContext('2d');
+        
+        const gestureStatusText = document.getElementById('gestureStatusText');
+        const fpsDisplay = document.getElementById('fpsDisplay');
+        const statusDot = document.getElementById('statusDot');
+        
+        const brushSizeSlider = document.getElementById('brushSize');
+        const brushSizeVal = document.getElementById('brushSizeVal');
+        const glowSlider = document.getElementById('glowIntensity');
+        const glowVal = document.getElementById('glowVal');
+        const fadeToggle = document.getElementById('fadeToggle');
+        const audioToggleBtn = document.getElementById('audioToggleBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const screenshotBtn = document.getElementById('screenshotBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const colorGridContainer = document.getElementById('colorGrid');
+        const secureContextHint = document.getElementById('secureContextHint');
+        const cameraErrorPanel = document.getElementById('cameraErrorPanel');
+        const cameraErrorTitle = document.getElementById('cameraErrorTitle');
+        const cameraErrorMessage = document.getElementById('cameraErrorMessage');
+        const cameraErrorSteps = document.getElementById('cameraErrorSteps');
+        const cameraErrorCommand = document.getElementById('cameraErrorCommand');
+        const cameraErrorRetry = document.getElementById('cameraErrorRetry');
+        const cameraErrorDismiss = document.getElementById('cameraErrorDismiss');
+
+        let cameraStream = null;
+        let cameraFrameBusy = false;
+        let engineInitialized = false;
+        let handsTrackingEngine = null;
+
+        // --- PARTICLE EMITTER ARRAY CONTAINER ---
+        let sparksArray = [];
+
+        // --- WEB AUDIO AUDIO SYNTHESIZER DRIVER ENGINE ---
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            playTone(freq, type, duration, vol) {
+                if (isAudioMuted || !this.ctx) return;
+                try {
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) { console.error(e); }
+            },
+            triggerDrawSound() {
+                this.playTone(600, 'sine', 0.08, 0.04);
+            },
+            triggerEraseSound() {
+                this.playTone(180, 'triangle', 0.15, 0.1);
+            },
+            triggerClearSound() {
+                this.playTone(880, 'sine', 0.1, 0.1);
+                setTimeout(() => this.playTone(1200, 'sine', 0.15, 0.08), 80);
+            },
+            triggerClickSound() {
+                this.playTone(400, 'sine', 0.05, 0.1);
+            }
+        };
+
+        // --- CORE APPLICATION INITIALIZATION PIPELINES ---
+        function windowResizeHandler() {
+            paintCanvas.width = window.innerWidth;
+            paintCanvas.height = window.innerHeight;
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+            
+            // Re-render clear structural black canvas space configuration
+            paintCtx.fillStyle = '#050816';
+            paintCtx.fillRect(0, 0, paintCanvas.width, paintCanvas.height);
+        }
+        windowResizeHandler();
+        window.addEventListener('resize', windowResizeHandler);
+
+        // Populate programmatically constructed neon button configuration layout matrices
+        COLORS.forEach((color, i) => {
+            const btn = document.createElement('button');
+            btn.className = `color-btn ${i===0?'active':''}`;
+            btn.style.backgroundColor = color;
+            btn.style.boxShadow = `0 0 8px ${color}80`;
+            btn.addEventListener('click', () => {
+                AudioEngine.triggerClickSound();
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeColor = color;
+            });
+            colorGridContainer.appendChild(btn);
+        });
+
+        // Interface UI Control Listener Bindings
+        brushSizeSlider.addEventListener('input', (e) => {
+            currentBrushSize = parseInt(e.target.value);
+            brushSizeVal.innerText = `${currentBrushSize}px`;
+        });
+        glowSlider.addEventListener('input', (e) => {
+            currentGlow = parseInt(e.target.value);
+            glowVal.innerText = currentGlow;
+        });
+        fadeToggle.addEventListener('change', (e) => {
+            isDecayEnabled = e.target.checked;
+            AudioEngine.triggerClickSound();
+        });
+        audioToggleBtn.addEventListener('click', () => {
+            isAudioMuted = !isAudioMuted;
+            audioToggleBtn.classList.toggle('active', isAudioMuted);
+            audioToggleBtn.innerHTML = isAudioMuted ? `<i class="fas fa-volume-mute"></i> Muted` : `<i class="fas fa-volume-up"></i> FX Audio`;
+            if(!isAudioMuted && !AudioEngine.ctx) AudioEngine.init();
+        });
+        clearBtn.addEventListener('click', () => {
+            purgeCanvasMatrix();
+        });
+        screenshotBtn.addEventListener('click', captureCanvasSnapshot);
+        fullscreenBtn.addEventListener('click', toggleSystemFullscreen);
+
+        // Core Event Processing Action: Force Reset Purge Canvas Matrix Execution Loop
+        function purgeCanvasMatrix() {
+            AudioEngine.triggerClearSound();
+            paintCtx.fillStyle = '#050816';
+            paintCtx.fillRect(0, 0, paintCanvas.width, paintCanvas.height);
+            sparksArray = [];
+        }
+
+        function toggleSystemFullscreen() {
+            AudioEngine.triggerClickSound();
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function captureCanvasSnapshot() {
+            AudioEngine.triggerClickSound();
+            // Create compound flat canvas rendering pipeline configuration export array target
+            const outputCaptureCanvas = document.createElement('canvas');
+            outputCaptureCanvas.width = paintCanvas.width;
+            outputCaptureCanvas.height = paintCanvas.height;
+            const outputCtx = outputCaptureCanvas.getContext('2d');
+            
+            // Layer sequence synthesis
+            outputCtx.drawImage(paintCanvas, 0, 0);
+            outputCtx.drawImage(particleCanvas, 0, 0);
+            
+            const dataUrl = outputCaptureCanvas.toDataURL('image/png');
+            const placeholderLink = document.createElement('a');
+            placeholderLink.download = `neon_air_drawing_${Date.now()}.png`;
+            placeholderLink.href = dataUrl;
+            placeholderLink.click();
+        }
+
+        // --- SUB-ENGINE: PARTICLE SYSTEMS (NEON BLOOM EMITTER) ---
+        class SparkParticle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = (Math.random() - 0.5) * 4;
+                this.speedY = (Math.random() - 0.5) * 4;
+                this.color = color;
+                this.longevity = 1.0;
+                this.decayRate = Math.random() * 0.02 + 0.015;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.longevity -= this.decayRate;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = this.longevity;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class AmbientBackgroundParticle {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * window.innerHeight;
+            }
+            reset() {
+                this.x = Math.random() * window.innerWidth;
+                this.y = window.innerHeight + 10;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.speedY = -(Math.random() * 0.4 + 0.1);
+                this.alpha = Math.random() * 0.5 + 0.2;
+            }
+            update() {
+                this.y += this.speedY;
+                if (this.y < -10) this.reset();
+            }
+            draw(ctx) {
+                ctx.fillStyle = `rgba(0, 243, 255, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        let ambientParticlesList = Array.from({length: 40}, () => new AmbientBackgroundParticle());
+
+        function spawnSparkBurst(x, y, color) {
+            for (let i = 0; i < 3; i++) {
+                sparksArray.push(new SparkParticle(x, y, color));
+            }
+        }
+
+        // --- MATH UTILITIES: SMOOTHING KINEMATICS VIA INTERPOLATION ---
+        function calculateLevenbergLinearInterpolation(p0, p1, t) {
+            return p0 + (p1 - p0) * t;
+        }
+
+        // --- MAIN GEOMETRY BRUSH DRAWING ROUTINES ---
+        function processRenderStrokeSegment(x1, y1, x2, y2, interactionMode, velocityPressure = 1) {
+            paintCtx.save();
+            
+            if (interactionMode === 'erase') {
+                // Soft specialized transparent erase mask operation blend configuration
+                paintCtx.globalCompositeOperation = 'destination-out';
+                paintCtx.strokeStyle = 'rgba(0,0,0,1)';
+                paintCtx.lineWidth = currentBrushSize * 2.5;
+                paintCtx.shadowBlur = currentGlow * 1.5;
+                paintCtx.shadowColor = 'rgba(0,0,0,1)';
+                paintCtx.lineCap = 'round';
+                paintCtx.lineJoin = 'round';
+                
+                paintCtx.beginPath();
+                paintCtx.moveTo(x1, y1);
+                paintCtx.lineTo(x2, y2);
+                paintCtx.stroke();
+                
+                if (Math.random() < 0.3) AudioEngine.triggerEraseSound();
+            } else {
+                // Neon structural additive composite simulation layering glow configuration profile
+                paintCtx.globalCompositeOperation = 'source-over';
+                paintCtx.lineCap = 'round';
+                paintCtx.lineJoin = 'round';
+                
+                // Dynamic execution scaling parameters calculated against tracking step velocity
+                const calibratedThickness = Math.max(2, currentBrushSize * velocityPressure);
+                
+                // Pass 1: Primary deep background glow footprint profile emission layer
+                paintCtx.lineWidth = calibratedThickness + (currentGlow * 0.6);
+                paintCtx.strokeStyle = activeColor;
+                paintCtx.shadowBlur = currentGlow * 1.2;
+                paintCtx.shadowColor = activeColor;
+                paintCtx.globalAlpha = 0.25;
+                
+                paintCtx.beginPath();
+                paintCtx.moveTo(x1, y1);
+                paintCtx.lineTo(x2, y2);
+                paintCtx.stroke();
+
+                // Pass 2: Secondary focused intense high energy structural core channel
+                paintCtx.lineWidth = calibratedThickness;
+                paintCtx.strokeStyle = '#ffffff';
+                paintCtx.shadowBlur = currentGlow * 0.4;
+                paintCtx.shadowColor = activeColor;
+                paintCtx.globalAlpha = 1.0;
+                
+                paintCtx.beginPath();
+                paintCtx.moveTo(x1, y1);
+                paintCtx.lineTo(x2, y2);
+                paintCtx.stroke();
+                
+                AudioEngine.triggerDrawSound();
+                spawnSparkBurst(x2, y2, activeColor);
+            }
+            
+            paintCtx.restore();
+        }
+
+        // --- COMPUTER VISION: MEDIAPIPE GESTURE TRANSLATION MATRICES ---
+        function analyzeHandGestureProfile(landmarks) {
+            // Unpack architectural nodes references for geometric analytics processing
+            const thumbTip = landmarks[4];
+            const thumbIP = landmarks[3];
+            const indexTip = landmarks[8];
+            const indexPip = landmarks[6];
+            const middleTip = landmarks[12];
+            const middlePip = landmarks[10];
+            const ringTip = landmarks[16];
+            const ringPip = landmarks[14];
+            const pinkyTip = landmarks[20];
+            const pinkyPip = landmarks[18];
+            const wrist = landmarks[0];
+
+            // Primary structural state metrics calculation evaluation criteria maps
+            const isIndexExtended = indexTip.y < indexPip.y;
+            const isMiddleExtended = middleTip.y < middlePip.y;
+            const isRingExtended = ringTip.y < ringPip.y;
+            const isPinkyExtended = pinkyTip.y < pinkyPip.y;
+            
+            // Specialized vertical height threshold calculations across structural vectors
+            const isThumbUpward = (thumbTip.y < thumbIP.y) && (thumbTip.y < indexPip.y) && (Math.abs(thumbTip.x - wrist.x) < 0.25);
+            const isFistFormed = !isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended;
+
+            // Gesture logic classification arbitration execution chain architecture
+            if (isThumbUpward && !isIndexExtended && !isMiddleExtended) {
+                return "clear";
+            }
+            if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended) {
+                return "color_cycle";
+            }
+            if (isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) {
+                return "draw";
+            }
+            if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended) {
+                return "erase";
+            }
+            if (isFistFormed) {
+                return "pause";
+            }
+            
+            return "idle";
+        }
+
+        // --- CORE APPLICATION REALTIME PIPELINE LOOP GENERATOR ---
+        function masterEngineRenderCycle() {
+            // Realtime tracking framerate metrics capture tracking block
+            frameCount++;
+            const currentTimestamp = performance.now();
+            if (currentTimestamp >= lastFrameTime + 1000) {
+                fps = Math.round((frameCount * 1000) / (currentTimestamp - lastFrameTime));
+                fpsDisplay.innerText = `FPS: ${fps.toString().padStart(2, '0')}`;
+                frameCount = 0;
+                lastFrameTime = currentTimestamp;
+                
+                // Colorize metrics marker dependent on platform target engine load optimization
+                statusDot.style.background = fps > 45 ? 'var(--neon-green)' : (fps > 25 ? '#ffff00' : 'var(--neon-pink)');
+                statusDot.style.boxShadow = `0 0 8px ${statusDot.style.background}`;
+            }
+
+            // Clear secondary frame buffers execution path sequence
+            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+
+            // Execute automated system environmental decay cycles
+            if (isDecayEnabled) {
+                paintCtx.save();
+                paintCtx.globalCompositeOperation = 'source-over';
+                // Minimal translucent mask layer projection generates elegant fluid trace decay over time
+                paintCtx.fillStyle = 'rgba(5, 8, 22, 0.012)';
+                paintCtx.fillRect(0, 0, paintCanvas.width, paintCanvas.height);
+                paintCtx.restore();
+            }
+
+            // Draw dynamic background elements layer 
+            ambientParticlesList.forEach(particle => {
+                particle.update();
+                particle.draw(particleCtx);
+            });
+
+            // Update, construct, and draw trailing neon explosion particle clusters
+            sparksArray = sparksArray.filter(spark => spark.longevity > 0);
+            sparksArray.forEach(spark => {
+                spark.update();
+                spark.draw(particleCtx);
+            });
+
+            requestAnimationFrame(masterEngineRenderCycle);
+        }
+
+        // --- MEDIAPIPE FRAME RESPONSE INTERCEPTOR HOOK ---
+        function onHandTrackingResultsFrameHandler(results) {
+            // Render video mirrored feed buffer reference window layout node
+            webcamCtx.clearRect(0, 0, webcamCanvas.width, webcamCanvas.height);
+            webcamCtx.drawImage(results.image, 0, 0, webcamCanvas.width, webcamCanvas.height);
+
+            // Guard verification check evaluating if tracking coordinates profile structures are present
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                trackingActive = true;
+                const activeHandLandmarks = results.multiHandLandmarks[0];
+                
+                // Track spatial position maps for top interface coordinates metrics frame target index tip
+                const rawIndexTipNode = activeHandLandmarks[8];
+                
+                // Reverse X-axis mapping coordinates matching view reflection transformation alignment configurations
+                const targetPixelViewportX = (1 - rawIndexTipNode.x) * paintCanvas.width;
+                const targetPixelViewportY = rawIndexTipNode.y * paintCanvas.height;
+
+                // Interpret active geometric profile structure translation code mapping matching hand pattern structure
+                const detectedGesture = analyzeHandGestureProfile(activeHandLandmarks);
+                
+                // Dynamic status box class styling configurations implementation updates execution tree
+                if (detectedGesture !== previousGesture) {
+                    gestureStatusText.className = "gesture-status-box interactive";
+                    if(detectedGesture === 'draw') gestureStatusText.classList.add('active-draw');
+                    if(detectedGesture === 'erase') gestureStatusText.classList.add('active-erase');
+                    
+                    // Route and execute special processing commands targeting structural UI configuration mutation functions
+                    if (detectedGesture === "clear") {
+                        purgeCanvasMatrix();
+                    } else if (detectedGesture === "color_cycle") {
+                        // Automatically cycle color selections forward inside operational arrays
+                        AudioEngine.triggerClickSound();
+                        const nextColorIndex = (COLORS.indexOf(activeColor) + 1) % COLORS.length;
+                        activeColor = COLORS[nextColorIndex];
+                        document.querySelectorAll('.color-btn').forEach((btn, idx) => {
+                            btn.classList.toggle('active', idx === nextColorIndex);
+                        });
+                    }
+                    
+                    gestureStatusText.innerText = detectedGesture.replace('_', ' ');
+                    previousGesture = detectedGesture;
+                }
+
+                // Process kinematic line interpolation sequences dependent on selected interaction state profile
+                if (detectedGesture === "draw" || detectedGesture === "erase") {
+                    if (lastX !== null && lastY !== null) {
+                        
+                        // Apply smoothing kinematics through weighted averaging low pass filters
+                        const smoothedTargetX = calculateLevenbergLinearInterpolation(lastX, targetPixelViewportX, 0.38);
+                        const smoothedTargetY = calculateLevenbergLinearInterpolation(lastY, targetPixelViewportY, 0.38);
+
+                        // Calculate motion velocity metrics parameters to generate fluid dynamic pressure fluctuations
+                        const deltaX = smoothedTargetX - lastX;
+                        const deltaY = smoothedTargetY - lastY;
+                        const trackingVelocityDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                        
+                        // Velocity inverse scaling simulator calculates optimized responsive ink flow weights
+                        const modulatedVelocityPressure = Math.max(0.3, Math.min(2.0, 12 / (trackingVelocityDistance + 1)));
+
+                        processRenderStrokeSegment(lastX, lastY, smoothedTargetX, smoothedTargetY, detectedGesture, modulatedVelocityPressure);
+                        
+                        lastX = smoothedTargetX;
+                        lastY = smoothedTargetY;
+                    } else {
+                        lastX = targetPixelViewportX;
+                        lastY = targetPixelViewportY;
+                    }
+                } else {
+                    // Reset kinematics spatial orientation tracking anchors
+                    lastX = null;
+                    lastY = null;
+                }
+
+                // Render high-intensity targeting crosshairs overlay position indicator frame node
+                renderHUDTargetingReticule(targetPixelViewportX, targetPixelViewportY, detectedGesture);
+
+            } else {
+                // Tracking context drop out state management
+                if (trackingActive) {
+                    trackingActive = false;
+                    gestureStatusText.className = "gesture-status-box interactive";
+                    gestureStatusText.innerText = "System Idle";
+                    previousGesture = "idle";
+                }
+                lastX = null;
+                lastY = null;
+            }
+        }
+
+        // Render dynamic neon target reticule at tracked fingertip position
+        function renderHUDTargetingReticule(x, y, gesture) {
+            particleCtx.save();
+            let markerColor = varExtensionReader('--neon-blue');
+            if(gesture === 'draw') markerColor = varExtensionReader('--neon-green');
+            if(gesture === 'erase') markerColor = varExtensionReader('--neon-pink');
+
+            particleCtx.strokeStyle = markerColor;
+            particleCtx.lineWidth = 2;
+            particleCtx.shadowBlur = 8;
+            particleCtx.shadowColor = markerColor;
+
+            // Draw outer target ring
+            particleCtx.beginPath();
+            particleCtx.arc(x, y, 16, 0, Math.PI * 2);
+            particleCtx.stroke();
+
+            // Draw inner precise crosshair dot core point
+            particleCtx.fillStyle = '#ffffff';
+            particleCtx.beginPath();
+            particleCtx.arc(x, y, 3, 0, Math.PI * 2);
+            particleCtx.fill();
+            particleCtx.restore();
+        }
+
+        // Utility helper to read system root CSS color hex parameters accurately
+        function varExtensionReader(variableName) {
+            return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+        }
+
+        // --- SUB-ENGINE INTERFACE: MOBILE TOUCH GRAPHICS FALLBACK OVERLAY ---
+        let mobileCanvasTouchActive = false;
+        
+        paintCanvas.addEventListener('touchstart', (e) => {
+            if (trackingActive) return; // Prioritize camera computer vision tracking if engaged
+            mobileCanvasTouchActive = true;
+            const touchNode = e.touches[0];
+            lastX = touchNode.clientX;
+            lastY = touchNode.clientY;
+            if(!AudioEngine.ctx) AudioEngine.init();
+        }, {passive: true});
+
+        paintCanvas.addEventListener('touchmove', (e) => {
+            if (!mobileCanvasTouchActive || trackingActive) return;
+            const touchNode = e.touches[0];
+            processRenderStrokeSegment(lastX, lastY, touchNode.clientX, touchNode.clientY, 'draw', 1.0);
+            lastX = touchNode.clientX;
+            lastY = touchNode.clientY;
+        }, {passive: true});
+
+        paintCanvas.addEventListener('touchend', () => {
+            mobileCanvasTouchActive = false;
+            lastX = null;
+            lastY = null;
+        }, {passive: true});
+
+
+        function describeCameraError(err) {
+            const insecure = !window.isSecureContext || location.protocol === 'file:';
+            if (insecure) {
+                return {
+                    title: 'Camera blocked — use local server',
+                    message: 'Opening index.html directly (file://) blocks the webcam. Run a local server, then allow camera access.',
+                    steps: [
+                        'Open Terminal in the airdrawing project folder',
+                        'Run: npm start',
+                        'Open http://localhost:3000 in Chrome or Edge',
+                        'Click INITIALIZE ENGINE and allow the camera'
+                    ],
+                    command: 'npm start'
+                };
+            }
+            if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+                return {
+                    title: 'Camera permission denied',
+                    message: 'The browser blocked or denied camera access for this page.',
+                    steps: [
+                        'Click the camera icon in the address bar and set permission to Allow',
+                        'macOS: System Settings → Privacy & Security → Camera → enable your browser',
+                        'Reload the page and try again'
+                    ],
+                    command: 'npm start'
+                };
+            }
+            if (err?.name === 'NotFoundError') {
+                return {
+                    title: 'No camera found',
+                    message: 'No webcam was detected on this device.',
+                    steps: ['Connect a camera or use touch drawing instead'],
+                    command: ''
+                };
+            }
+            return {
+                title: 'Camera error',
+                message: err?.message || 'Could not start the webcam.',
+                steps: ['Try npm start on localhost', 'Check browser camera permissions'],
+                command: 'npm start'
+            };
+        }
+
+        function showCameraError(info) {
+            cameraErrorTitle.textContent = info.title;
+            cameraErrorMessage.textContent = info.message;
+            cameraErrorSteps.innerHTML = info.steps.map(s => `<li>${s}</li>`).join('');
+            cameraErrorCommand.textContent = info.command || '';
+            cameraErrorCommand.style.display = info.command ? 'block' : 'none';
+            cameraErrorPanel.classList.add('visible');
+        }
+
+        function hideCameraError() {
+            cameraErrorPanel.classList.remove('visible');
+        }
+
+        function stopWebcamPipeline() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            webcamVideo.srcObject = null;
+        }
+
+        async function startWebcamPipeline() {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                throw new Error('Camera API not available in this browser.');
+            }
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
+            });
+            webcamVideo.srcObject = stream;
+            cameraStream = stream;
+            await webcamVideo.play();
+
+            function pumpFrames() {
+                if (!cameraStream) return;
+                requestAnimationFrame(pumpFrames);
+                if (cameraFrameBusy || webcamVideo.readyState < 2 || !handsTrackingEngine) return;
+                cameraFrameBusy = true;
+                handsTrackingEngine.send({ image: webcamVideo }).finally(() => {
+                    cameraFrameBusy = false;
+                });
+            }
+            pumpFrames();
+        }
+
+        function initHandsEngine() {
+            if (handsTrackingEngine) return;
+            handsTrackingEngine = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+            handsTrackingEngine.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.7,
+                minTrackingConfidence: 0.7
+            });
+            handsTrackingEngine.onResults(onHandTrackingResultsFrameHandler);
+        }
+
+        async function launchEngine({ withCamera }) {
+            if (!engineInitialized) {
+                AudioEngine.init();
+                webcamCanvas.width = 200;
+                webcamCanvas.height = 150;
+                windowResizeHandler();
+                initHandsEngine();
+                masterEngineRenderCycle();
+                engineInitialized = true;
+            }
+
+            if (withCamera) {
+                gestureStatusText.innerText = 'STARTING HARDWARE...';
+                await startWebcamPipeline();
+                gestureStatusText.innerText = 'ENGINE ACTIVE';
+                gestureStatusText.style.borderColor = '';
+            } else {
+                stopWebcamPipeline();
+                trackingActive = false;
+                gestureStatusText.innerText = 'TOUCH FALLBACK ACTIVE';
+                gestureStatusText.style.borderColor = 'var(--neon-pink)';
+            }
+        }
+
+        async function enterApp(withCamera) {
+            hideCameraError();
+            introScreen.classList.add('fade-out');
+            try {
+                await launchEngine({ withCamera });
+            } catch (err) {
+                console.error('Camera startup failed:', err);
+                introScreen.classList.remove('fade-out');
+                showCameraError(describeCameraError(err));
+                throw err;
+            }
+        }
+
+        async function handleStart(withCamera) {
+            if (!AudioEngine.ctx) AudioEngine.init();
+            AudioEngine.triggerClearSound();
+            startBtn.disabled = true;
+            try {
+                await enterApp(withCamera);
+            } catch {
+                startBtn.disabled = false;
+            }
+        }
+
+        startBtn.addEventListener('click', () => handleStart(true));
+        cameraErrorRetry.addEventListener('click', () => handleStart(true));
+        cameraErrorDismiss.addEventListener('click', () => handleStart(false));
+
+        if (!window.isSecureContext || location.protocol === 'file:') {
+            secureContextHint.hidden = false;
+            secureContextHint.innerHTML =
+                'Webcam is blocked on <code>file://</code>. Run <code>npm start</code> in this folder, then open <code>http://localhost:3000</code>.';
+        }
+    </script>
+</body>
+</html>
