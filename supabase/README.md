@@ -1,5 +1,7 @@
 # Supabase 설정 (OT Hub 좋아요 · 댓글)
 
+> **참고**: 현재 실제로 연결된 프로젝트(`hamhyeonggwang's Project`)는 이미 `othub_likes`/`othub_comments`/`othub_content_items` 스키마가 배포되어 있어 아래 `schema.sql`을 다시 적용하지 않았습니다. 콘텐츠 id는 `othub_content_items.id`(UUID)를 기준으로 하며, `engagement.js`의 `CONTENT_ID_MAP`이 이 저장소의 로컬 콘텐츠 id(`g6` 등)를 해당 UUID로 매핑합니다. 이 스키마는 좋아요·댓글 모두 로그인 회원만 가능하며, **비회원 좋아요는 지원하지 않습니다** (아래 5장 이후 내용은 최초 설계안 기준이라 실제 동작과 다를 수 있습니다).
+
 ## 1. 프로젝트 생성
 
 [Supabase](https://supabase.com)에서 새 프로젝트를 만듭니다.

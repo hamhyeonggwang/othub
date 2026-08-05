@@ -86,9 +86,7 @@ img{display:block;max-width:100%;}
 .eng-like-btn{color:#E11D48!important;}
 .eng-like-btn:hover{background:rgba(225,29,72,.12)!important;color:#BE123C!important;}
 
-/* 좋아요·댓글 일시 숨김 — 복구: 아래 .l-mini-eng 오버라이드·#engModal의 !important·visibility·pointer-events 제거 + engagement 플래그·JS 가드 제거 */
-.l-mini-eng{display:none!important;}
-#engModal{display:none!important;visibility:hidden!important;pointer-events:none!important;position:fixed;inset:0;z-index:400;background:rgba(26,43,76,.45);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+#engModal{display:none;position:fixed;inset:0;z-index:400;background:rgba(26,43,76,.45);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
 #engModal .eng-dialog{background:#fff;border-radius:20px;max-width:420px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(26,43,76,.2);}
 .eng-dlg-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);}
 .eng-dlg-head h3{margin:0;font-size:15px;font-weight:700;color:var(--navy);}
@@ -882,7 +880,6 @@ img{display:block;max-width:100%;}
 
 <script src="supabase-config.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script>window.OT_HUB_HIDE_ENGAGEMENT=true;</script>
 <script src="engagement.js"></script>
 <script src="game-thumbs.js"></script>
 

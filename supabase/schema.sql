@@ -1,5 +1,10 @@
 -- OT Hub — 좋아요(비회원·회원) / 댓글(회원만)
 -- Supabase SQL Editor에서 프로젝트에 붙여 실행하세요.
+--
+-- 참고: 실제 연결된 프로젝트(hamhyeonggwang's Project)에는 이미 othub_likes/othub_comments/
+-- othub_content_items 스키마가 배포되어 있어 이 파일은 적용되지 않았습니다. 그 스키마는
+-- content_id가 othub_content_items.id(UUID)를 참조하고, 좋아요도 로그인 회원만 가능합니다
+-- (아래 likes 테이블의 비회원 liker_id 설계와 다름). 최초 설계안 참고용으로만 남겨둡니다.
 
 -- ── 좋아요 (직접 INSERT/DELETE 금지, RPC만 사용) ─────────────────
 create table if not exists public.likes (

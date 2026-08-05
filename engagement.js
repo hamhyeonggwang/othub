@@ -1,5 +1,25 @@
 (function () {
-  var STORAGE_ANON = 'othub_eng_anon_v1';
+  var CONTENT_ID_MAP = {
+    g6: '331c12fb-76eb-477e-9877-cae7f972a8cd',
+    g7: '32092c8c-efed-4207-a5fa-3b5acdc89895',
+    g8: 'b6ded452-37aa-45ae-88ee-e65dded8fe6b',
+    g9: '3399fb50-3b62-4276-8ea8-835be3483c30',
+    g10: 'd9579723-faa1-4577-a8fd-7f7812dcd533',
+    g14: '43a4839b-1e46-4911-9d9e-2993c56cff4c',
+    g11: '6e45c259-8ebf-4919-b6e4-d0efb95770bb',
+    g12: 'edd74b72-0cbd-4fd4-9a27-d28b39047cdc',
+    g13: '36d313f1-e559-44b1-bd51-a24b6901e8ee',
+    g15: 'f3a42664-efa3-4f92-93df-5eeeeafec069',
+    g16: 'e026e580-bc38-4b5d-93ff-083af14ef8b2',
+    w4: 'fb9c3824-8dbe-41d7-864a-9efb469dd529',
+    w5: 'b3858055-fea5-4020-81cb-e0945374976d',
+    w6: '5e6166dc-7dac-4880-99e1-6877963207e1',
+    v1: '5dc95b5c-c15c-4abc-99f5-062ba4dabb54',
+  };
+
+  function resolveContentId(localId) {
+    return CONTENT_ID_MAP[localId] || null;
+  }
 
   function getCfg() {
     var c = window.OT_HUB_SUPABASE || {};
@@ -18,35 +38,30 @@
     return _client;
   }
 
-  function getAnonId() {
-    try {
-      var id = localStorage.getItem(STORAGE_ANON);
-      if (!id) {
-        id = typeof crypto !== 'undefined' && crypto.randomUUID
-          ? crypto.randomUUID()
-          : 'a-' + String(Date.now()) + '-' + Math.random().toString(36).slice(2);
-        localStorage.setItem(STORAGE_ANON, id);
-      }
-      return id;
-    } catch (e) {
-      return 'fallback-' + String(Date.now());
-    }
-  }
-
   function likeCounts(ids) {
     var sb = getClient();
     if (!sb || !ids.length) return Promise.resolve({});
     var uniq = ids.filter(function (x, i, a) { return a.indexOf(x) === i; });
+    var localByReal = {};
+    var realIds = [];
+    uniq.forEach(function (localId) {
+      var realId = resolveContentId(localId);
+      if (!realId) return;
+      localByReal[realId] = localId;
+      realIds.push(realId);
+    });
+    if (!realIds.length) return Promise.resolve({});
     return sb
-      .from('likes')
+      .from('othub_likes')
       .select('content_id')
-      .in('content_id', uniq)
+      .in('content_id', realIds)
       .then(function (res) {
         var m = {};
         if (res.error || !res.data) return m;
         res.data.forEach(function (row) {
-          var k = row.content_id;
-          m[k] = (m[k] || 0) + 1;
+          var localId = localByReal[row.content_id];
+          if (!localId) return;
+          m[localId] = (m[localId] || 0) + 1;
         });
         return m;
       });
@@ -55,19 +70,58 @@
   function toggleLike(contentId) {
     var sb = getClient();
     if (!sb) return Promise.reject(new Error('no client'));
-    return sb.rpc('othub_toggle_like', {
-      p_content_id: contentId,
-      p_anon_id: getAnonId(),
+    var realId = resolveContentId(contentId);
+    if (!realId) {
+      var unmappedErr = new Error('content not linked');
+      unmappedErr.code = 'unmapped';
+      return Promise.reject(unmappedErr);
+    }
+    return sb.auth.getSession().then(function (r) {
+      var session = r.data && r.data.session;
+      if (!session) {
+        var loginErr = new Error('login required');
+        loginErr.code = 'login_required';
+        throw loginErr;
+      }
+      var uid = session.user.id;
+      return sb
+        .from('othub_likes')
+        .select('user_id')
+        .eq('user_id', uid)
+        .eq('content_id', realId)
+        .maybeSingle()
+        .then(function (res) {
+          if (res.error) throw res.error;
+          if (res.data) {
+            return sb
+              .from('othub_likes')
+              .delete()
+              .eq('user_id', uid)
+              .eq('content_id', realId)
+              .then(function (delRes) {
+                if (delRes.error) throw delRes.error;
+                return { liked: false };
+              });
+          }
+          return sb
+            .from('othub_likes')
+            .insert({ user_id: uid, content_id: realId })
+            .then(function (insRes) {
+              if (insRes.error) throw insRes.error;
+              return { liked: true };
+            });
+        });
     });
   }
 
   function fetchComments(contentId) {
     var sb = getClient();
-    if (!sb) return Promise.resolve([]);
+    var realId = resolveContentId(contentId);
+    if (!sb || !realId) return Promise.resolve([]);
     return sb
-      .from('comments')
+      .from('othub_comments')
       .select('id, body, created_at, user_id')
-      .eq('content_id', contentId)
+      .eq('content_id', realId)
       .order('created_at', { ascending: false })
       .limit(50)
       .then(function (res) {
@@ -79,13 +133,19 @@
   function postComment(contentId, body) {
     var sb = getClient();
     if (!sb) return Promise.reject(new Error('no client'));
+    var realId = resolveContentId(contentId);
+    if (!realId) {
+      var unmappedErr = new Error('content not linked');
+      unmappedErr.code = 'unmapped';
+      return Promise.reject(unmappedErr);
+    }
     return sb.auth.getSession().then(function (_ref) {
       var session = _ref.data && _ref.data.session;
       if (!session) throw new Error('login required');
       return sb
-        .from('comments')
+        .from('othub_comments')
         .insert({
-          content_id: contentId,
+          content_id: realId,
           user_id: session.user.id,
           body: body.trim(),
         })
@@ -230,7 +290,12 @@
       ids.forEach(function (id) {
         var b = btnMap[id];
         var sp = b && b.querySelector('.eng-like-cnt');
-        if (sp) sp.textContent = String((counts && counts[id]) || 0);
+        if (!sp) return;
+        if (!resolveContentId(id)) {
+          sp.textContent = '–';
+          return;
+        }
+        sp.textContent = String((counts && counts[id]) || 0);
       });
     });
   }
@@ -241,31 +306,38 @@
     if (!like && !cmt) return;
     e.stopPropagation();
     e.preventDefault();
+    var cid = (like || cmt).getAttribute('data-cid');
+    if (!getClient()) {
+      window.alert(
+        'Supabase가 연결되지 않았습니다.\nsupabase-config.js에 url과 anonKey를 입력해 주세요.'
+      );
+      return;
+    }
+    if (!resolveContentId(cid)) {
+      window.alert('이 콘텐츠는 아직 좋아요/댓글 기능을 지원하지 않습니다.');
+      return;
+    }
     if (like) {
-      var cid = like.getAttribute('data-cid');
-      if (!getClient()) {
-        window.alert(
-          'Supabase가 연결되지 않았습니다.\nsupabase-config.js에 url과 anonKey를 입력해 주세요.'
-        );
-        return;
-      }
       toggleLike(cid)
         .then(function () {
           return refreshStripCounts();
         })
         .catch(function (err) {
+          if (err && err.code === 'login_required') {
+            openCommentModal(cid);
+            return;
+          }
           console.error(err);
           window.alert('좋아요 처리에 실패했습니다. 콘솔을 확인해 주세요.');
         });
       return;
     }
     if (cmt) {
-      openCommentModal(cmt.getAttribute('data-cid'));
+      openCommentModal(cid);
     }
   }
 
   function bindStrip() {
-    if (window.OT_HUB_HIDE_ENGAGEMENT) return;
     var wrap = document.getElementById('lStrip');
     if (!wrap) return;
     if (!wrap.getAttribute('data-eng-del')) {
@@ -276,7 +348,6 @@
   }
 
   function wireModal() {
-    if (window.OT_HUB_HIDE_ENGAGEMENT) return;
     var m = el('engModal');
     if (!m) return;
     m.addEventListener('click', function (e) {
