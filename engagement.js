@@ -229,6 +229,18 @@
     fetchComments(currentCid).then(renderComments);
   }
 
+  function applyCommentAuthState(session) {
+    var formWrap = el('engCommentFormWrap');
+    var loginWrap = el('engLoginWrap');
+    if (session) {
+      if (loginWrap) loginWrap.style.display = 'none';
+      if (formWrap) formWrap.style.display = 'block';
+    } else {
+      if (loginWrap) loginWrap.style.display = 'block';
+      if (formWrap) formWrap.style.display = 'none';
+    }
+  }
+
   function openCommentModal(contentId) {
     currentCid = contentId;
     var m = el('engModal');
@@ -254,14 +266,7 @@
     if (hint) hint.style.display = 'none';
 
     sb.auth.getSession().then(function (_ref2) {
-      var session = _ref2.data && _ref2.data.session;
-      if (session) {
-        if (loginWrap) loginWrap.style.display = 'none';
-        if (formWrap) formWrap.style.display = 'block';
-      } else {
-        if (loginWrap) loginWrap.style.display = 'block';
-        if (formWrap) formWrap.style.display = 'none';
-      }
+      applyCommentAuthState(_ref2.data && _ref2.data.session);
     });
 
     refreshModalComments();
@@ -405,12 +410,7 @@
         if (el('engModal') && el('engModal').style.display === 'flex') {
           sb.auth.getSession().then(function (_ref3) {
             var session = _ref3.data && _ref3.data.session;
-            var formWrap = el('engCommentFormWrap');
-            var loginWrap = el('engLoginWrap');
-            if (session) {
-              if (loginWrap) loginWrap.style.display = 'none';
-              if (formWrap) formWrap.style.display = 'block';
-            }
+            if (session) applyCommentAuthState(session);
           });
         }
       });

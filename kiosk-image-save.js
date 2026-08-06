@@ -125,6 +125,53 @@
     if (el) el.remove();
   }
 
+  function buildReceiptLinesHtml(items) {
+    return items.map(function (it, idx) {
+      var no = idx + 1;
+      var name = esc(it.name);
+      var up = it.unitPrice === '' || it.unitPrice === undefined || it.unitPrice === null
+        ? '-'
+        : fmtWon(it.unitPrice);
+      var q = it.qty === '' || it.qty === undefined || it.qty === null ? '-' : String(it.qty);
+      var lt = fmtWon(it.lineTotal);
+      return '<div class="kiosk-r-row">' + no + '. ' + name + ' / ' + up + ' / ' + q + ' / ' + lt + '</div>';
+    }).join('');
+  }
+
+  function buildReceiptMarkup(data) {
+    return (
+      '<div class="kiosk-receipt-modal-wrap">' +
+      '<div class="kiosk-receipt-scroll">' +
+      '<div id="kiosk-receipt-thermal" class="kiosk-receipt-paper">' +
+      '<div class="kiosk-r-title">[영수증]</div>' +
+      '<div class="kiosk-r-hr">---------------------</div>' +
+      '<div class="kiosk-r-note">영수증 미지참시 교환/환불 불가\n* 정상상품에 한함, 30일 이내(신선 7일)\n교환/환불 구매점에서 가능(결제카드지참)</div>' +
+      '<div class="kiosk-r-meta"><span class="kiosk-r-bold">주문번호 : </span>' + esc(data.orderNo) + '</div>' +
+      '<div class="kiosk-r-meta"><span class="kiosk-r-bold">[구매]</span>' + esc(data.dateStr) + '</div>' +
+      '<div class="kiosk-r-hr">--------------------------------</div>' +
+      '<div class="kiosk-r-table">' +
+      '<div class="kiosk-r-th">no. 상품명 / 단가 / 수량 / 금액</div>' +
+      data.linesHtml +
+      '</div>' +
+      '<div class="kiosk-r-total">결제대상금액 ' + fmtWon(data.total) + '</div>' +
+      '</div></div>' +
+      '<div class="kiosk-receipt-modal-actions">' +
+      '<button type="button" class="kiosk-receipt-btn-close">닫기</button>' +
+      '<button type="button" class="kiosk-receipt-btn-save">🧾 영수증 저장</button>' +
+      '</div></div>'
+    );
+  }
+
+  function wireReceiptModal(ov, filenameBase, toastFn) {
+    ov.querySelector('.kiosk-receipt-btn-close').onclick = closeKioskReceiptModal;
+    ov.querySelector('.kiosk-receipt-btn-save').onclick = function () {
+      kioskSaveImage('#kiosk-receipt-thermal', filenameBase, toastFn);
+    };
+    ov.addEventListener('click', function (e) {
+      if (e.target === ov) closeKioskReceiptModal();
+    });
+  }
+
   /**
    * @param {object} cfg
    * @param {function(string)} cfg.toast
@@ -146,54 +193,26 @@
     injectKioskReceiptStyles();
     closeKioskReceiptModal();
 
-    var linesHtml = items.map(function (it, idx) {
-      var no = idx + 1;
-      var name = esc(it.name);
-      var up = it.unitPrice === '' || it.unitPrice === undefined || it.unitPrice === null
-        ? '-'
-        : fmtWon(it.unitPrice);
-      var q = it.qty === '' || it.qty === undefined || it.qty === null ? '-' : String(it.qty);
-      var lt = fmtWon(it.lineTotal);
-      return '<div class="kiosk-r-row">' + no + '. ' + name + ' / ' + up + ' / ' + q + ' / ' + lt + '</div>';
-    }).join('');
-
-    var dateStr = fmtDdMmYyyy(purchaseDate);
-
     var ov = document.createElement('div');
     ov.id = 'kiosk-receipt-modal-ov';
     ov.className = 'kiosk-receipt-modal-ov';
-    ov.innerHTML =
-      '<div class="kiosk-receipt-modal-wrap">' +
-      '<div class="kiosk-receipt-scroll">' +
-      '<div id="kiosk-receipt-thermal" class="kiosk-receipt-paper">' +
-      '<div class="kiosk-r-title">[영수증]</div>' +
-      '<div class="kiosk-r-hr">---------------------</div>' +
-      '<div class="kiosk-r-note">영수증 미지참시 교환/환불 불가\n* 정상상품에 한함, 30일 이내(신선 7일)\n교환/환불 구매점에서 가능(결제카드지참)</div>' +
-      '<div class="kiosk-r-meta"><span class="kiosk-r-bold">주문번호 : </span>' + esc(orderNo) + '</div>' +
-      '<div class="kiosk-r-meta"><span class="kiosk-r-bold">[구매]</span>' + esc(dateStr) + '</div>' +
-      '<div class="kiosk-r-hr">--------------------------------</div>' +
-      '<div class="kiosk-r-table">' +
-      '<div class="kiosk-r-th">no. 상품명 / 단가 / 수량 / 금액</div>' +
-      linesHtml +
-      '</div>' +
-      '<div class="kiosk-r-total">결제대상금액 ' + fmtWon(total) + '</div>' +
-      '</div></div>' +
-      '<div class="kiosk-receipt-modal-actions">' +
-      '<button type="button" class="kiosk-receipt-btn-close">닫기</button>' +
-      '<button type="button" class="kiosk-receipt-btn-save">🧾 영수증 저장</button>' +
-      '</div></div>';
+    ov.innerHTML = buildReceiptMarkup({
+      orderNo: orderNo,
+      dateStr: fmtDdMmYyyy(purchaseDate),
+      linesHtml: buildReceiptLinesHtml(items),
+      total: total,
+    });
 
     document.body.appendChild(ov);
-
-    ov.querySelector('.kiosk-receipt-btn-close').onclick = closeKioskReceiptModal;
-    ov.querySelector('.kiosk-receipt-btn-save').onclick = function () {
-      kioskSaveImage('#kiosk-receipt-thermal', filenameBase, toastFn);
-    };
-    ov.addEventListener('click', function (e) {
-      if (e.target === ov) closeKioskReceiptModal();
-    });
+    wireReceiptModal(ov, filenameBase, toastFn);
   }
 
+  window.KioskImageSave = {
+    saveImage: kioskSaveImage,
+    saveResultScreen: kioskSaveResultScreen,
+    openReceiptModal: openKioskReceiptModal,
+    closeReceiptModal: closeKioskReceiptModal,
+  };
   window.kioskSaveImage = kioskSaveImage;
   window.kioskSaveResultScreen = kioskSaveResultScreen;
   window.openKioskReceiptModal = openKioskReceiptModal;
