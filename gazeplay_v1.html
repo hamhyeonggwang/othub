@@ -824,6 +824,7 @@ body{background:var(--bg);font-family:'Hahmlet','Noto Sans KR',sans-serif;color:
 
 </div><!-- th-sidebar end -->
 
+<script src="eye-calibration.js"></script>
 <script>
 'use strict';
 
@@ -1000,101 +1001,22 @@ function runHand() {
 let faceLM=null, faceRAF=null;
 let ex=window.innerWidth/2, ey=window.innerHeight/2;
 
-// eyeCalib: writing-game 패턴
-const eyeCalib = {
-  points:[], offsetX:0, offsetY:0,
-  scaleX:1.0, scaleY:1.0, centerRawX:0, centerRawY:0,
-  manualOffsetX:0, manualOffsetY:0,
-  manualScaleX:1.0, manualScaleY:1.0,
-  smoothing:0.6, calibrated:false
-};
-const CALIB_TARGETS = [
-  {nx:.5,ny:.5},{nx:.05,ny:.05},{nx:.95,ny:.05},
-  {nx:.05,ny:.95},{nx:.95,ny:.95},{nx:.5,ny:.05},
-  {nx:.5,ny:.95},{nx:.05,ny:.5},{nx:.95,ny:.5},
-];
-let calibIdx2=0, calibCollecting=false, calibTimer2=null;
-
-function openCalib() {
-  if (!faceLM){ showToast('⚠️ 시선 추적을 먼저 켜세요'); return; }
-  calibIdx2=0; eyeCalib.points=[];
-  const overlay=document.getElementById('calib-overlay');
-  const arena=document.getElementById('calib-arena');
-  overlay.classList.add('open');
-  document.getElementById('calib-close-btn').style.display='none';
-  buildCalibDots(arena);
-  document.getElementById('calib-progress-text').textContent='0 / '+CALIB_TARGETS.length+' 완료';
-  startCalibTarget(0);
-}
-function buildCalibDots(arena) {
-  arena.innerHTML='';
-  CALIB_TARGETS.forEach((t,i)=>{
-    const dot=document.createElement('div');
-    dot.className='calib-dot'; dot.id='cdot-'+i;
-    dot.style.left=(t.nx*window.innerWidth)+'px';
-    dot.style.top=(t.ny*window.innerHeight)+'px';
-    dot.textContent='👁';
-    if(i>0) dot.style.opacity='0.3';
-    dot.addEventListener('click',()=>forceCollectCalib(i));
-    arena.appendChild(dot);
-  });
-}
-function startCalibTarget(idx) {
-  if (idx>=CALIB_TARGETS.length){ finishCalib(); return; }
-  calibIdx2=idx; calibCollecting=true;
-  CALIB_TARGETS.forEach((_,i)=>{
-    const d=document.getElementById('cdot-'+i);
-    if(d) d.style.opacity=i===idx?'1':'0.3';
-  });
-  document.getElementById('calib-sub').textContent=
-    `(${idx+1}/${CALIB_TARGETS.length}) 노란 점 👁 을 바라보세요!`;
-  calibTimer2=setTimeout(()=>collectCalibSample(idx), 1500);
-}
-function forceCollectCalib(idx) {
-  if(idx!==calibIdx2) return;
-  clearTimeout(calibTimer2); collectCalibSample(idx);
-}
-function collectCalibSample(idx) {
-  if(!calibCollecting) return;
-  calibCollecting=false;
-  const t=CALIB_TARGETS[idx];
-  eyeCalib.points.push({
-    rawX:ex, rawY:ey,
-    screenX:t.nx*window.innerWidth, screenY:t.ny*window.innerHeight
-  });
-  const d=document.getElementById('cdot-'+idx);
-  if(d){d.classList.add('done');d.textContent='✅';}
-  document.getElementById('calib-progress-text').textContent=
-    (idx+1)+' / '+CALIB_TARGETS.length+' 완료';
-  setTimeout(()=>startCalibTarget(idx+1),400);
-}
-function finishCalib() {
-  const pts=eyeCalib.points;
-  if(pts.length<2) return;
-  const rawXs=pts.map(p=>p.rawX), rawYs=pts.map(p=>p.rawY);
-  const scrXs=pts.map(p=>p.screenX), scrYs=pts.map(p=>p.screenY);
-  const minRX=Math.min(...rawXs),maxRX=Math.max(...rawXs);
-  const minRY=Math.min(...rawYs),maxRY=Math.max(...rawYs);
-  eyeCalib.scaleX=(maxRX-minRX)>10?(Math.max(...scrXs)-Math.min(...scrXs))/(maxRX-minRX):1.0;
-  eyeCalib.scaleY=(maxRY-minRY)>10?(Math.max(...scrYs)-Math.min(...scrYs))/(maxRY-minRY):1.0;
-  eyeCalib.centerRawX=(minRX+maxRX)/2;
-  eyeCalib.centerRawY=(minRY+maxRY)/2;
-  const screenCX=(Math.min(...scrXs)+Math.max(...scrXs))/2;
-  const screenCY=(Math.min(...scrYs)+Math.max(...scrYs))/2;
-  eyeCalib.offsetX=screenCX-eyeCalib.centerRawX*eyeCalib.scaleX;
-  eyeCalib.offsetY=screenCY-eyeCalib.centerRawY*eyeCalib.scaleY;
-  eyeCalib.calibrated=true;
-  document.getElementById('calib-sub').textContent=
-    `영점 완료! ✨ 스케일 X:${eyeCalib.scaleX.toFixed(2)} Y:${eyeCalib.scaleY.toFixed(2)}`;
-  document.getElementById('calib-close-btn').style.display='block';
-  document.getElementById('calib-progress-text').textContent='✅ 완료!';
-  const el=document.getElementById('lv-iris');
-  if(el){el.textContent=`✅ 완료 (${pts.length}점)`;el.style.color='#34d399';}
-  SFX.tutClear();
-}
-function closeCalib() {
-  document.getElementById('calib-overlay').classList.remove('open');
-}
+// eyeCalib: 공통 로직은 eye-calibration.js로 추출
+const _calib = createEyeCalibration({
+  getGaze: function () { return { x: ex, y: ey }; },
+  guard: function () {
+    if (!faceLM) { showToast('⚠️ 시선 추적을 먼저 켜세요'); return false; }
+    return true;
+  },
+  onFinish: function (eyeCalib) {
+    const el=document.getElementById('lv-iris');
+    if(el){el.textContent=`✅ 완료 (${eyeCalib.points.length}점)`;el.style.color='#34d399';}
+    SFX.tutClear();
+  },
+});
+const eyeCalib = _calib.eyeCalib;
+function openCalib() { _calib.openCalib(); }
+function closeCalib() { _calib.closeCalib(); }
 function irisCalibReset() {
   eyeCalib.calibrated=false; eyeCalib.points=[];
   eyeCalib.offsetX=0;eyeCalib.offsetY=0;
@@ -1114,15 +1036,6 @@ function irisCalibReset() {
   const el=document.getElementById('lv-iris');
   if(el){el.textContent='캘리브 필요';el.style.color='#fb923c';}
   showToast('시선 캘리브 초기화됨');
-}
-function applyCalib(rx, ry) {
-  const ax=eyeCalib.calibrated?rx*eyeCalib.scaleX+eyeCalib.offsetX:rx;
-  const ay=eyeCalib.calibrated?ry*eyeCalib.scaleY+eyeCalib.offsetY:ry;
-  const scx=window.innerWidth/2, scy=window.innerHeight/2;
-  return {
-    x:(ax-scx)*eyeCalib.manualScaleX+scx+eyeCalib.manualOffsetX,
-    y:(ay-scy)*eyeCalib.manualScaleY+scy+eyeCalib.manualOffsetY
-  };
 }
 
 async function initEye() {
@@ -1178,7 +1091,7 @@ function runEye() {
     const rawY=((blendY-0.5)*2+0.5)*window.innerHeight;
     const sm=eyeCalib.smoothing;
     ex=ex*sm+rawX*(1-sm); ey=ey*sm+rawY*(1-sm);
-    const {x:wx,y:wy}=applyCalib(ex,ey);
+    const {x:wx,y:wy}=_calib.applyCalib(ex,ey);
     G.gazeX=Math.max(0,Math.min(window.innerWidth,wx));
     G.gazeY=Math.max(0,Math.min(window.innerHeight,wy));
     if(G.screen==='game'){

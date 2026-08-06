@@ -892,6 +892,35 @@ let stormTimerOverride=60;
 let levelStartedOnce=false;
 
 // ══════════════════════════════════════════════════════════
+//  드래그 시작 공통 로직 (12/Seq/Storm 3개 레벨 타입에서 반복되던
+//  preventDefault·가드·activeDrag 설정·고스트 표시·리스너 등록만 모음.
+//  드롭 판정(dropToZone12/dropToSeqSlot/dropStormBalloon)은 타입별 규칙이
+//  서로 달라 그대로 둔다.)
+// ══════════════════════════════════════════════════════════
+function bindDragStart(el, cfg) {
+  function start(e, point) {
+    e.preventDefault();
+    if (!cfg.guard()) return false;
+    const payload = cfg.payload();
+    activeDrag = payload;
+    if (cfg.onDragStart) cfg.onDragStart(payload);
+    if (cfg.cardId) document.getElementById(cfg.cardId(payload))?.classList.add('active-card');
+    showGhost(payload.color, point.clientX, point.clientY, cfg.ghostScale);
+    return true;
+  }
+  el.addEventListener('mousedown', e => {
+    if (!start(e, e)) return;
+    window.addEventListener('mousemove', cfg.move);
+    window.addEventListener('mouseup', cfg.up);
+  });
+  el.addEventListener('touchstart', e => {
+    if (!start(e, e.touches[0])) return;
+    window.addEventListener('touchmove', cfg.touchMove, {passive:false});
+    window.addEventListener('touchend', cfg.touchEnd);
+  }, {passive:false});
+}
+
+// ══════════════════════════════════════════════════════════
 //  BALLOON SVG
 // ══════════════════════════════════════════════════════════
 function balloonSVG(color,w=80,h=100,sc=1){
@@ -1267,13 +1296,15 @@ function buildTray12(colors){
   [...colors].sort(()=>Math.random()-.5).forEach(color=>{
     const svg=mkSVG(color,62,78,.9,['b-card']);
     svg.dataset.color=color;svg.id=`tc-${color}`;
-    svg.addEventListener('mousedown',e=>startMouseDrag12(e,color));
-    svg.addEventListener('touchstart',e=>startTouchDrag12(e,color),{passive:false});
+    bindDragStart(svg, {
+      guard: () => !(placedSet.has(color)||isPaused),
+      payload: () => ({color}),
+      cardId: p => `tc-${p.color}`,
+      move: onMouseMoveGame, touchMove: onTouchMoveGame, up: onMouseUpGame, touchEnd: onTouchEndGame,
+    });
     tray.appendChild(svg);
   });
 }
-function startMouseDrag12(e,color){e.preventDefault();if(placedSet.has(color)||isPaused)return;activeDrag={color};document.getElementById(`tc-${color}`)?.classList.add('active-card');showGhost(color,e.clientX,e.clientY);window.addEventListener('mousemove',onMouseMoveGame);window.addEventListener('mouseup',onMouseUpGame);}
-function startTouchDrag12(e,color){e.preventDefault();if(placedSet.has(color)||isPaused)return;activeDrag={color};document.getElementById(`tc-${color}`)?.classList.add('active-card');const t=e.touches[0];showGhost(color,t.clientX,t.clientY);window.addEventListener('touchmove',onTouchMoveGame,{passive:false});window.addEventListener('touchend',onTouchEndGame);}
 function onMouseMoveGame(e){lastDragPos={x:e.clientX,y:e.clientY};moveGhost(e.clientX,e.clientY);}
 function onTouchMoveGame(e){e.preventDefault();const t=e.touches[0];lastDragPos={x:t.clientX,y:t.clientY};moveGhost(t.clientX,t.clientY);}
 function onMouseUpGame(e){window.removeEventListener('mousemove',onMouseMoveGame);window.removeEventListener('mouseup',onMouseUpGame);tryDropAtPos(e.clientX,e.clientY);}
@@ -1365,13 +1396,16 @@ function buildLevel4(lv){
   const tray=document.getElementById('seq-tray');tray.innerHTML='';
   [...colorSizes].sort(()=>Math.random()-.5).forEach(item=>{
     const svg=mkSVG(item.color,58,72,item.size,['b-card']);svg.dataset.color=item.color;svg.dataset.size=item.size;svg.id=`st-${item.color}`;
-    svg.addEventListener('mousedown',e=>startSeqDrag(e,item));
-    svg.addEventListener('touchstart',e=>startSeqTouchDrag(e,item),{passive:false});
+    bindDragStart(svg, {
+      guard: () => !(placedSet.has(item.color)||isPaused),
+      payload: () => item,
+      cardId: p => `st-${p.color}`,
+      ghostScale: item.size,
+      move: onMouseMoveGame, touchMove: onTouchMoveGame, up: onMouseUpGame, touchEnd: onTouchEndGame,
+    });
     tray.appendChild(svg);
   });
 }
-function startSeqDrag(e,item){e.preventDefault();if(placedSet.has(item.color)||isPaused)return;activeDrag=item;document.getElementById(`st-${item.color}`)?.classList.add('active-card');showGhost(item.color,e.clientX,e.clientY,item.size);window.addEventListener('mousemove',onMouseMoveGame);window.addEventListener('mouseup',onMouseUpGame);}
-function startSeqTouchDrag(e,item){e.preventDefault();if(placedSet.has(item.color)||isPaused)return;activeDrag=item;document.getElementById(`st-${item.color}`)?.classList.add('active-card');const t=e.touches[0];showGhost(item.color,t.clientX,t.clientY,item.size);window.addEventListener('touchmove',onTouchMoveGame,{passive:false});window.addEventListener('touchend',onTouchEndGame);}
 function dropToSeqSlot(x,y){
   if(!activeDrag)return;
   let hit=null;document.querySelectorAll('.seq-slot').forEach(s=>{const r=s.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)hit=s;});
@@ -1416,8 +1450,13 @@ function buildLevel5(lv){
     const wrap=document.createElement('div');wrap.className='floating-balloon';wrap.dataset.color=color;wrap.dataset.idx=i;
     const size=.85+Math.random()*.3;wrap.appendChild(mkSVG(color,68,85,size));
     wrap.style.cssText=`left:${10+Math.random()*75}%;top:${5+Math.random()*52}%;--dur:${3+Math.random()*4}s;--dx1:${-20+Math.random()*40}px;--dy1:${-25+Math.random()*50}px;--dx2:${-20+Math.random()*40}px;--dy2:${-25+Math.random()*50}px;`;
-    wrap.addEventListener('mousedown',e=>startStormDrag(e,wrap,color));
-    wrap.addEventListener('touchstart',e=>startStormTouchDrag(e,wrap,color),{passive:false});
+    bindDragStart(wrap, {
+      guard: () => !(wrap.dataset.rescued==='1'||isPaused),
+      payload: () => ({color}),
+      ghostScale: .9,
+      onDragStart: () => { stormDragEl={el:wrap,color}; wrap.style.animation='none'; wrap.style.zIndex='500'; },
+      move: onStormMouseMove, touchMove: onStormTouchMove, up: onStormMouseUp, touchEnd: onStormTouchEnd,
+    });
     board.appendChild(wrap);
   });
   const tl=lv.timeLimit||stormTimerOverride;timerLeft=tl;
@@ -1433,8 +1472,6 @@ function buildLevel5(lv){
     if(timerLeft<=0){clearInterval(timerInterval);levelComplete(true);}
   },1000);
 }
-function startStormDrag(e,el,color){e.preventDefault();if(el.dataset.rescued==='1'||isPaused)return;stormDragEl={el,color};el.style.animation='none';el.style.zIndex='500';activeDrag={color};showGhost(color,e.clientX,e.clientY,.9);window.addEventListener('mousemove',onStormMouseMove);window.addEventListener('mouseup',onStormMouseUp);}
-function startStormTouchDrag(e,el,color){e.preventDefault();if(el.dataset.rescued==='1'||isPaused)return;stormDragEl={el,color};el.style.animation='none';el.style.zIndex='500';activeDrag={color};const t=e.touches[0];showGhost(color,t.clientX,t.clientY,.9);window.addEventListener('touchmove',onStormTouchMove,{passive:false});window.addEventListener('touchend',onStormTouchEnd);}
 function onStormMouseMove(e){lastDragPos={x:e.clientX,y:e.clientY};moveGhost(e.clientX,e.clientY);}
 function onStormTouchMove(e){e.preventDefault();const t=e.touches[0];lastDragPos={x:t.clientX,y:t.clientY};moveGhost(t.clientX,t.clientY);}
 function onStormMouseUp(e){window.removeEventListener('mousemove',onStormMouseMove);window.removeEventListener('mouseup',onStormMouseUp);dropStormBalloon(e.clientX,e.clientY);}

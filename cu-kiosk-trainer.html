@@ -7,7 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="kiosk-image-save.js"></script>
+<script src="kiosk-trainer-shell.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kiosk-trainer-shell.css">
 <style>
 /* =========================================
    BASE
@@ -51,7 +53,7 @@ body {
 }
 
 /* -------- THERAPIST SIDEBAR -------- */
-#therapist-panel {
+#tp {
   width: 270px;
   min-width: 270px;
   background: var(--cu-dark);
@@ -64,7 +66,7 @@ body {
   top: 0;
   height: 100vh;
 }
-#therapist-panel.collapsed {
+#tp.col {
   width: 0;
   min-width: 0;
 }
@@ -178,7 +180,7 @@ body {
 .tp-btn-reset:hover { background: rgba(255,255,255,.18); color: white; }
 
 /* -------- SIDEBAR TOGGLE -------- */
-#panel-toggle {
+#ptbtn {
   position: fixed;
   top: 14px; left: 14px;
   z-index: 300;
@@ -191,7 +193,7 @@ body {
   transition: left .35s cubic-bezier(.4,0,.2,1);
   color: white;
 }
-#panel-toggle.open { left: 282px; }
+#ptbtn.open { left: 282px; }
 
 /* -------- KIOSK SCREEN -------- */
 #kiosk-wrap {
@@ -205,7 +207,7 @@ body {
 }
 
 /* WM Mission bar */
-#wm-bar {
+#wmbar {
   width: 100%;
   max-width: 480px;
   margin-bottom: 10px;
@@ -222,7 +224,7 @@ body {
 .wm-texts { flex: 1; }
 .wm-label { font-size: 10px; color: rgba(255,255,255,.6); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 .wm-task { font-size: 14px; font-weight: 700; color: white; margin-top: 1px; }
-.wm-task.blurred { filter: blur(5px); user-select: none; }
+.wm-task.blr { filter: blur(5px); user-select: none; }
 .wm-reveal {
   padding: 5px 12px; border-radius: 20px;
   background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.35);
@@ -1044,7 +1046,7 @@ body {
 .bp-print-qr img.qr-bitmap, .bp-print-qr canvas.qr-bitmap { display: block !important; margin: 0 auto; max-width: 100%; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges; }
 
 @media print {
-  #app-root, #panel-toggle { display: none !important; }
+  #app-root, #ptbtn { display: none !important; }
   #barcode-page { display: block !important; position: static; }
   .bp-header { display: none; }
   .bp-intro { display: none; }
@@ -1119,7 +1121,7 @@ body {
 <div id="app-root">
 
   <!-- THERAPIST PANEL -->
-  <div id="therapist-panel">
+  <div id="tp">
     <div class="tp-header">
       <div class="tp-title">치료사 컨트롤 패널</div>
       <div class="tp-subtitle">🛒 CU 셀프계산대 훈련</div>
@@ -1176,9 +1178,9 @@ body {
       <div class="tp-section">
         <div class="tp-sec-label">📊 세션 기록</div>
         <div class="stats-grid">
-          <div class="stat-card"><div class="stat-num" id="st-trials">0</div><div class="stat-lbl">시도</div></div>
-          <div class="stat-card"><div class="stat-num" id="st-correct">0</div><div class="stat-lbl">정답</div></div>
-          <div class="stat-card"><div class="stat-num" id="st-pct">0%</div><div class="stat-lbl">정확도</div></div>
+          <div class="stat-card"><div class="stat-num" id="st-t">0</div><div class="stat-lbl">시도</div></div>
+          <div class="stat-card"><div class="stat-num" id="st-c">0</div><div class="stat-lbl">정답</div></div>
+          <div class="stat-card"><div class="stat-num" id="st-p">0%</div><div class="stat-lbl">정확도</div></div>
         </div>
         <button type="button" class="tp-btn-save-result" onclick="kioskSaveResultScreen('cu', showToast)">📷 결과 화면 저장</button>
       </div>
@@ -1189,23 +1191,23 @@ body {
       <button class="tp-btn tp-btn-barcode" onclick="openBarcodePageFn()">🏷️ QR 카드 출력</button>
       <button class="tp-btn tp-btn-reset" style="margin-top:6px" onclick="resetAll()">🔄 새 세션 시작</button>
     </div>
-  </div><!-- /therapist-panel -->
+  </div><!-- /tp -->
 
   <!-- PANEL TOGGLE -->
-  <button id="panel-toggle" class="open" onclick="togglePanel()">☰</button>
+  <button id="ptbtn" class="open" onclick="togglePanel()">☰</button>
 
   <!-- KIOSK WRAP -->
   <div id="kiosk-wrap">
 
     <!-- WM BAR -->
-    <div id="wm-bar">
+    <div id="wmbar">
       <div class="wm-inner">
         <span class="wm-icon">🎯</span>
         <div class="wm-texts">
           <div class="wm-label">오늘의 미션</div>
-          <div class="wm-task" id="wm-task-text">우유 1개를 사 오세요!</div>
+          <div class="wm-task" id="wmtask">우유 1개를 사 오세요!</div>
         </div>
-        <button class="wm-reveal" id="wm-reveal-btn" onclick="revealMission()" style="display:none">보기</button>
+        <button class="wm-reveal" id="wmrev" onclick="revealMission()" style="display:none">보기</button>
       </div>
     </div>
 
@@ -1360,14 +1362,8 @@ function renderStepBar() {
 // =============================================
 //  TOAST
 // =============================================
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
-}
+const _shell = createTrainerShell(state, { mhideKey:'hide', toastMs:2200, trackPanelOpen:true });
+function showToast(msg) { _shell.showToast(msg); }
 
 // =============================================
 //  RENDER ROUTER
@@ -2041,21 +2037,9 @@ function resetAll() {
 // =============================================
 //  SIDEBAR / PANEL
 // =============================================
-function togglePanel() {
-  const panel = document.getElementById('therapist-panel');
-  const btn = document.getElementById('panel-toggle');
-  panel.classList.toggle('collapsed');
-  state.panelOpen = !panel.classList.contains('collapsed');
-  btn.classList.toggle('open', state.panelOpen);
-  btn.textContent = state.panelOpen ? '☰' : '☰';
-}
+function togglePanel() { _shell.togPanel(); }
 
-function toggleOpt(key, el) {
-  state.opts[key] = !state.opts[key];
-  el.classList.toggle('on');
-  if (key==='mission') document.getElementById('wm-bar').style.display = state.opts.mission?'block':'none';
-  if (key==='hide') updateMissionBar();
-}
+function toggleOpt(key, el) { _shell.togOpt(key, el); }
 
 function setDiff(d, el) {
   state.difficulty = d;
@@ -2071,40 +2055,11 @@ function setMission() {
   updateMissionBar();
 }
 
-function updateMissionBar() {
-  const txt = document.getElementById('wm-task-text');
-  const revBtn = document.getElementById('wm-reveal-btn');
-  if (!txt) return;
-  txt.textContent = state.mission;
-  if (state.opts.hide) {
-    txt.classList.add('blurred');
-    revBtn.style.display = 'block';
-  } else {
-    txt.classList.remove('blurred');
-    revBtn.style.display = 'none';
-  }
-  document.getElementById('wm-bar').style.display = state.opts.mission ? 'block' : 'none';
-}
+function updateMissionBar() { _shell.updateWmBar(); }
 
-function revealMission() {
-  const txt = document.getElementById('wm-task-text');
-  const revBtn = document.getElementById('wm-reveal-btn');
-  txt.classList.remove('blurred');
-  revBtn.style.display = 'none';
-  setTimeout(() => {
-    if (state.opts.hide) {
-      txt.classList.add('blurred');
-      revBtn.style.display = 'block';
-    }
-  }, 3000);
-}
+function revealMission() { _shell.revealMs(); }
 
-function updateStats() {
-  document.getElementById('st-trials').textContent = state.stats.trials;
-  document.getElementById('st-correct').textContent = state.stats.correct;
-  const pct = state.stats.trials > 0 ? Math.round(state.stats.correct/state.stats.trials*100) : 0;
-  document.getElementById('st-pct').textContent = pct + '%';
-}
+function updateStats() { _shell.updateStats(); }
 
 // =============================================
 //  QR CARD PRINT PAGE
@@ -2144,12 +2099,12 @@ function openBarcodePageFn() {
   buildBarcodePage();
   document.getElementById('barcode-page').style.display = 'block';
   document.getElementById('app-root').style.display = 'none';
-  document.getElementById('panel-toggle').style.display = 'none';
+  document.getElementById('ptbtn').style.display = 'none';
 }
 function closeBarcodePageFn() {
   document.getElementById('barcode-page').style.display = 'none';
   document.getElementById('app-root').style.display = 'flex';
-  document.getElementById('panel-toggle').style.display = 'flex';
+  document.getElementById('ptbtn').style.display = 'flex';
 }
 
 function makeBarcodeCard(product, containerSel) {

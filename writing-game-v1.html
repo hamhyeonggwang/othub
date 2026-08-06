@@ -624,6 +624,7 @@ input[type=range] { width:100%; accent-color:var(--blue); }
   <button id="calib-close-btn" onclick="closeCalib()">✅ 완료!</button>
 </div>
 
+<script src="eye-calibration.js"></script>
 <script>
 // ═══════════════════════════════════════════
 // CONFIG
@@ -1199,180 +1200,13 @@ let ex=0, ey=0;
 let dwellStart=null, dwellLastPos={x:-999,y:-999};
 let isDwelling=false;
 
-// Calibration state
-const eyeCalib = {
-  // Collected reference points: [{rawX, rawY, screenX, screenY}]
-  points: [],
-  // Computed affine: offset + scale
-  offsetX: 0,
-  offsetY: 0,
-  scaleX: 1.0,   // stretch raw X range to fill screen
-  scaleY: 1.0,   // stretch raw Y range to fill screen
-  centerRawX: 0, // raw center used as pivot for scaling
-  centerRawY: 0,
-  // Manual fine-tune
-  manualOffsetX: 0,
-  manualOffsetY: 0,
-  manualScaleX: 1.0,
-  manualScaleY: 1.0,
-  // Smoothing factor (0=raw, 0.9=very smooth)
-  smoothing: 0.6,
-  calibrated: false
-};
-
-// 9 calibration target positions — full screen coverage including edges
-const CALIB_TARGETS = [
-  {nx:.5,  ny:.5 },   // ① center
-  {nx:.05, ny:.05},   // ② top-left corner
-  {nx:.95, ny:.05},   // ③ top-right corner
-  {nx:.05, ny:.95},   // ④ bottom-left corner
-  {nx:.95, ny:.95},   // ⑤ bottom-right corner
-  {nx:.5,  ny:.05},   // ⑥ top-center
-  {nx:.5,  ny:.95},   // ⑦ bottom-center
-  {nx:.05, ny:.5 },   // ⑧ left-center
-  {nx:.95, ny:.5 },   // ⑨ right-center
-];
-let calibIdx=0, calibRawSamples=[], calibCollecting=false, calibTimer=null;
-
-// ── Calibration UI ──────────────────────
-function openCalib() {
-  calibIdx=0; calibRawSamples=[];
-  const overlay=document.getElementById('calib-overlay');
-  const arena=document.getElementById('calib-arena');
-  overlay.classList.add('open');
-  document.getElementById('calib-close-btn').style.display='none';
-  buildCalibDots(arena);
-  document.getElementById('calib-progress-text').textContent='0 / '+CALIB_TARGETS.length+' 완료';
-  // start collecting for first dot
-  startCalibTarget(0);
-}
-
-function buildCalibDots(arena) {
-  arena.innerHTML='';
-  CALIB_TARGETS.forEach((t,i)=>{
-    const dot=document.createElement('div');
-    dot.className='calib-dot';
-    dot.id='cdot-'+i;
-    // Position as actual screen pixels so dots go to true edges
-    dot.style.left=(t.nx*window.innerWidth)+'px';
-    dot.style.top=(t.ny*window.innerHeight)+'px';
-    dot.textContent='👁️';
-    if(i>0) dot.style.opacity='0.3';
-    dot.addEventListener('click',()=>forceCollectCalib(i));
-    arena.appendChild(dot);
-  });
-}
-
-function startCalibTarget(idx) {
-  if(idx >= CALIB_TARGETS.length){ finishCalib(); return; }
-  calibIdx=idx; calibRawSamples=[];
-  // Highlight current dot
-  CALIB_TARGETS.forEach((_,i)=>{
-    const d=document.getElementById('cdot-'+i);
-    if(d) d.style.opacity=i===idx?'1':'0.3';
-  });
-  document.getElementById('calib-sub').textContent=
-    `(${idx+1}/${CALIB_TARGETS.length}) 노란 점 👁️ 을 바라보세요!`;
-  calibCollecting=true;
-  // Auto-collect after 1.5s of looking
-  calibTimer=setTimeout(()=>collectCalibSample(idx), 1500);
-}
-
-function forceCollectCalib(idx) {
-  if(idx!==calibIdx) return;
-  clearTimeout(calibTimer);
-  collectCalibSample(idx);
-}
-
-function collectCalibSample(idx) {
-  if(!calibCollecting) return;
-  calibCollecting=false;
-  const t=CALIB_TARGETS[idx];
-  const screenX=t.nx*window.innerWidth;
-  const screenY=t.ny*window.innerHeight;
-  // Use current smoothed raw position
-  eyeCalib.points.push({ rawX:ex, rawY:ey, screenX, screenY });
-  // Mark done
-  const d=document.getElementById('cdot-'+idx);
-  if(d){ d.classList.add('done'); d.textContent='✅'; }
-  document.getElementById('calib-progress-text').textContent=
-    (idx+1)+' / '+CALIB_TARGETS.length+' 완료';
-  setTimeout(()=>startCalibTarget(idx+1), 400);
-}
-
-function finishCalib() {
-  const pts = eyeCalib.points;
-  if(pts.length < 2) return;
-
-  // ── Compute scale + offset via least-squares fit ──
-  // For each axis independently:
-  //   screenX = scaleX * (rawX - centerRaw) + screenCenter + offsetX
-  // We find scaleX and offsetX that minimizes error.
-
-  // Raw ranges
-  const rawXs = pts.map(p=>p.rawX);
-  const rawYs = pts.map(p=>p.rawY);
-  const scrXs = pts.map(p=>p.screenX);
-  const scrYs = pts.map(p=>p.screenY);
-
-  const minRX=Math.min(...rawXs), maxRX=Math.max(...rawXs);
-  const minRY=Math.min(...rawYs), maxRY=Math.max(...rawYs);
-  const minSX=Math.min(...scrXs), maxSX=Math.max(...scrXs);
-  const minSY=Math.min(...scrYs), maxSY=Math.max(...scrYs);
-
-  const rawRangeX = maxRX - minRX;
-  const rawRangeY = maxRY - minRY;
-  const scrRangeX = maxSX - minSX;
-  const scrRangeY = maxSY - minSY;
-
-  // Scale: how much we need to stretch raw range to match screen range
-  eyeCalib.scaleX = rawRangeX > 10 ? scrRangeX / rawRangeX : 1.0;
-  eyeCalib.scaleY = rawRangeY > 10 ? scrRangeY / rawRangeY : 1.0;
-
-  // Pivot: raw center maps to screen center
-  eyeCalib.centerRawX = (minRX + maxRX) / 2;
-  eyeCalib.centerRawY = (minRY + maxRY) / 2;
-  const screenCX = (minSX + maxSX) / 2;
-  const screenCY = (minSY + maxSY) / 2;
-
-  // Offset: after scaling around raw center, shift to screen center
-  eyeCalib.offsetX = screenCX - eyeCalib.centerRawX * eyeCalib.scaleX;
-  eyeCalib.offsetY = screenCY - eyeCalib.centerRawY * eyeCalib.scaleY;
-
-  eyeCalib.calibrated = true;
-
-  // Show computed scale in UI for reference
-  const sxRounded = eyeCalib.scaleX.toFixed(2);
-  const syRounded = eyeCalib.scaleY.toFixed(2);
-
-  document.getElementById('calib-sub').textContent =
-    `영점 완료! ✨ 스케일 X:${sxRounded} Y:${syRounded}`;
-  document.getElementById('calib-close-btn').style.display='block';
-  document.getElementById('calib-progress-text').textContent='✅ 완료!';
-}
-
-function closeCalib() {
-  document.getElementById('calib-overlay').classList.remove('open');
-}
-
-// ── Apply calibration to raw gaze ───────
-function applyCalib(rx, ry) {
-  // 1. Auto calibration: scale around raw center, then offset to screen
-  const ax = eyeCalib.calibrated
-    ? rx * eyeCalib.scaleX + eyeCalib.offsetX
-    : rx;
-  const ay = eyeCalib.calibrated
-    ? ry * eyeCalib.scaleY + eyeCalib.offsetY
-    : ry;
-
-  // 2. Manual scale (pivot = screen center)
-  const scx = window.innerWidth  / 2;
-  const scy = window.innerHeight / 2;
-  const mx = (ax - scx) * eyeCalib.manualScaleX + scx + eyeCalib.manualOffsetX;
-  const my = (ay - scy) * eyeCalib.manualScaleY + scy + eyeCalib.manualOffsetY;
-
-  return { x: mx, y: my };
-}
+// Calibration state — shared logic lives in eye-calibration.js
+const _calib = createEyeCalibration({
+  getGaze: function () { return { x: ex, y: ey }; },
+});
+const eyeCalib = _calib.eyeCalib;
+function openCalib() { _calib.openCalib(); }
+function closeCalib() { _calib.closeCalib(); }
 
 // ── Eye cursor display ───────────────────
 function updateEyeCursor(wx, wy, drawing) {
@@ -1472,7 +1306,7 @@ function runEye() {
     ey = ey*sm + rawY*(1-sm);
 
     // Apply calibration offset
-    const {x:wx, y:wy} = applyCalib(ex, ey);
+    const {x:wx, y:wy} = _calib.applyCalib(ex, ey);
 
     // ── Blink detection for "click" via blendshapes
     let blinkL=0, blinkR=0;
@@ -1486,11 +1320,6 @@ function runEye() {
 
     // ── Update cursor
     updateEyeCursor(wx, wy, isDwelling);
-
-    // ── Calibration: feed raw values while collecting
-    if(calibCollecting) {
-      ex=ex; // already smoothed above, fine
-    }
 
     // ── Dwell painting logic
     const dms=dwellMs[cfg.dwellLv-1];

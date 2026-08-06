@@ -6,7 +6,9 @@
 <title>문구야놀자 키오스크 훈련</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="kiosk-image-save.js"></script>
+<script src="kiosk-trainer-shell.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kiosk-trainer-shell.css">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -45,7 +47,7 @@ body{
   overflow:hidden;
   position:sticky;top:0;height:100vh;
 }
-#tp.collapsed{width:0;min-width:0;}
+#tp.col{width:0;min-width:0;}
 .tp-hd{background:#0f0f1a;padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;}
 .tp-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;}
 .tp-name{font-size:15px;font-weight:900;color:#FFD600;margin-top:2px;white-space:nowrap;}
@@ -81,7 +83,7 @@ body{
 .tp-btn-rst{background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);border:1.5px solid rgba(255,255,255,.2);}
 
 /* panel toggle */
-#pt-btn{
+#ptbtn{
   position:fixed;top:14px;left:14px;z-index:300;
   width:42px;height:42px;border-radius:11px;
   background:#1a1a2e;border:none;cursor:pointer;
@@ -90,7 +92,7 @@ body{
   box-shadow:0 4px 14px rgba(0,0,0,.5);
   transition:left .35s cubic-bezier(.4,0,.2,1);
 }
-#pt-btn.open{left:272px;}
+#ptbtn.open{left:272px;}
 
 /* ======== KIOSK WRAP ======== */
 #kiosk-wrap{
@@ -100,7 +102,7 @@ body{
 }
 
 /* WM bar */
-#wm-bar{width:100%;max-width:460px;margin-bottom:10px;padding-left:58px;}
+#wmbar{width:100%;max-width:460px;margin-bottom:10px;padding-left:58px;}
 .wm-inner{
   background:linear-gradient(135deg,#1a1a2e,#2d1b69);
   border-radius:14px;padding:12px 16px;
@@ -675,7 +677,7 @@ body{
 .bcp-pa-em{font-size:20px;}
 .bcp-pa-nm{font-size:10px;font-weight:700;text-align:center;}
 .bcp-pa-pr{font-size:10px;font-weight:700;color:var(--black);}
-@media print{#app-root,#pt-btn{display:none!important;}#bc-page{display:block!important;position:static;}  .bcp-hd{display:none;}.bcp-intro{display:none;}.bcp-print-area{border:none;background:none;}.bcp-card{break-inside:avoid;}.bcp-qr-host img.qr-bitmap,.bcp-qr-host canvas.qr-bitmap,.bcp-pa-qr img.qr-bitmap,.bcp-pa-qr canvas.qr-bitmap{-webkit-print-color-adjust:exact;print-color-adjust:exact;width:38mm!important;height:38mm!important;max-width:none!important;}.bcp-pa-qr img.qr-bitmap,.bcp-pa-qr canvas.qr-bitmap{width:32mm!important;height:32mm!important;}}
+@media print{#app-root,#ptbtn{display:none!important;}#bc-page{display:block!important;position:static;}  .bcp-hd{display:none;}.bcp-intro{display:none;}.bcp-print-area{border:none;background:none;}.bcp-card{break-inside:avoid;}.bcp-qr-host img.qr-bitmap,.bcp-qr-host canvas.qr-bitmap,.bcp-pa-qr img.qr-bitmap,.bcp-pa-qr canvas.qr-bitmap{-webkit-print-color-adjust:exact;print-color-adjust:exact;width:38mm!important;height:38mm!important;max-width:none!important;}.bcp-pa-qr img.qr-bitmap,.bcp-pa-qr canvas.qr-bitmap{width:32mm!important;height:32mm!important;}}
 
 /* TOAST */
 .toast{
@@ -777,19 +779,19 @@ body{
   </div>
 
   <!-- PANEL TOGGLE -->
-  <button id="pt-btn" class="open" onclick="togglePanel()">☰</button>
+  <button id="ptbtn" class="open" onclick="togglePanel()">☰</button>
 
   <!-- KIOSK WRAP -->
   <div id="kiosk-wrap">
     <!-- WM BAR -->
-    <div id="wm-bar">
+    <div id="wmbar">
       <div class="wm-inner">
         <span class="wm-icon">🎯</span>
         <div class="wm-texts">
           <div class="wm-lbl">오늘의 미션</div>
-          <div class="wm-task" id="wm-task">색연필 1개를 사 오세요!</div>
+          <div class="wm-task" id="wmtask">색연필 1개를 사 오세요!</div>
         </div>
-        <button class="wm-reveal" id="wm-reveal" onclick="revealMission()" style="display:none;">보기</button>
+        <button class="wm-reveal" id="wmrev" onclick="revealMission()" style="display:none;">보기</button>
       </div>
     </div>
 
@@ -928,13 +930,8 @@ function renderSteps(){
 /* ====================================================
    TOAST
    ==================================================== */
-let toastTmr;
-function toast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  clearTimeout(toastTmr);
-  toastTmr=setTimeout(()=>t.classList.remove('show'),2200);
-}
+const _shell=createTrainerShell(S,{mhideKey:'hide',toastMs:2200,trackPanelOpen:true});
+function toast(msg){ _shell.showToast(msg); }
 
 /* ====================================================
    RENDER
@@ -1430,19 +1427,8 @@ function resetAll(){
 /* ====================================================
    SIDEBAR
    ==================================================== */
-function togglePanel(){
-  const p=document.getElementById('tp');
-  const b=document.getElementById('pt-btn');
-  p.classList.toggle('collapsed');
-  S.panelOpen=!p.classList.contains('collapsed');
-  b.classList.toggle('open',S.panelOpen);
-}
-function toggleOpt(k,el){
-  S.opts[k]=!S.opts[k];
-  el.classList.toggle('on');
-  if(k==='mission') document.getElementById('wm-bar').style.display=S.opts.mission?'block':'none';
-  if(k==='hide') updateWmBar();
-}
+function togglePanel(){ _shell.togPanel(); }
+function toggleOpt(k,el){ _shell.togOpt(k,el); }
 function setDiff(d,el){
   S.difficulty=d;
   document.querySelectorAll('.diff-btn').forEach(b=>b.className='diff-btn');
@@ -1455,27 +1441,9 @@ function setMission(){
   S.mission=list[Math.floor(Math.random()*list.length)];
   updateWmBar();
 }
-function updateWmBar(){
-  const t=document.getElementById('wm-task');
-  const r=document.getElementById('wm-reveal');
-  if(!t) return;
-  t.textContent=S.mission;
-  if(S.opts.hide){t.classList.add('blr');r.style.display='block';}
-  else{t.classList.remove('blr');r.style.display='none';}
-  document.getElementById('wm-bar').style.display=S.opts.mission?'block':'none';
-}
-function revealMission(){
-  const t=document.getElementById('wm-task');
-  const r=document.getElementById('wm-reveal');
-  t.classList.remove('blr'); r.style.display='none';
-  setTimeout(()=>{if(S.opts.hide){t.classList.add('blr');r.style.display='block';}},3000);
-}
-function updateStats(){
-  document.getElementById('st-t').textContent=S.stats.trials;
-  document.getElementById('st-c').textContent=S.stats.correct;
-  const p=S.stats.trials>0?Math.round(S.stats.correct/S.stats.trials*100):0;
-  document.getElementById('st-p').textContent=p+'%';
-}
+function updateWmBar(){ _shell.updateWmBar(); }
+function revealMission(){ _shell.revealMs(); }
+function updateStats(){ _shell.updateStats(); }
 
 /* ====================================================
    QR CARD PAGE
@@ -1513,12 +1481,12 @@ function openBcPage(){
   buildBcPage();
   document.getElementById('bc-page').style.display='block';
   document.getElementById('app-root').style.display='none';
-  document.getElementById('pt-btn').style.display='none';
+  document.getElementById('ptbtn').style.display='none';
 }
 function closeBcPage(){
   document.getElementById('bc-page').style.display='none';
   document.getElementById('app-root').style.display='flex';
-  document.getElementById('pt-btn').style.display='flex';
+  document.getElementById('ptbtn').style.display='flex';
 }
 function makeBcCard(p,selId){
   const c=document.getElementById(selId);
