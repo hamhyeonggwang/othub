@@ -693,7 +693,6 @@ function beep(freq,dur=0.2,type='sine',vol=0.25) {
   } catch(e){}
 }
 function playPaint() { if(Math.random()>.88) beep(180+Math.random()*100,.08,'sawtooth',.1); }
-function playStep()  { beep(660,.15,'triangle'); setTimeout(()=>beep(880,.12,'triangle'),120); }
 function playWin()   {
   [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,.22,'triangle',.3),i*100));
   setTimeout(()=>beep(2000,.4,'sine',.2),600);

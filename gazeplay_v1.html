@@ -2104,46 +2104,11 @@ const SFX = (() => {
       noise({ gain:.08, duration:.25, delay:.5 });
     },
 
-    // 게임 시작 — 경쾌한 3연타
-    gameStart() {
-      [[392,.0],[523,.12],[659,.24]].forEach(([f, d]) =>
-        play({ type:'square', freq:f, gain:.15, attack:.01, decay:.05, sustain:.2, release:.08, duration:.18, delay:d })
-      );
-    },
-
-    // 게임 종료 — 하강 멜로디
-    gameEnd() {
-      [[784,.0],[659,.15],[523,.30],[392,.50]].forEach(([f, d]) =>
-        play({ type:'sine', freq:f, gain:.22, attack:.01, decay:.06, sustain:.4, release:.2, duration:.3, delay:d })
-      );
-    },
-
-    // 오답/미스 — 낮은 퍽
-    miss() {
-      play({ type:'sawtooth', freq:180, freq2:80, gain:.18, attack:.005, decay:.12, sustain:.1, release:.1, duration:.22 });
-      noise({ gain:.06, duration:.1 });
-    },
-
-    // 카운트다운 (10초 이하)
-    tick() {
-      play({ type:'sine', freq:880, gain:.15, attack:.005, decay:.04, sustain:.1, release:.05, duration:.12 });
-    },
-
     // 튜토리얼 단계 클리어
     tutClear() {
       [659, 784, 1047].forEach((f, i) =>
         play({ type:'sine', freq:f, gain:.2, attack:.01, decay:.06, sustain:.3, release:.15, duration:.3, delay: i * 0.12 })
       );
-    },
-
-    // dwell 진행 틱 (낮고 조용히)
-    dwellTick() {
-      play({ type:'sine', freq:1200, gain:.06, attack:.002, decay:.03, sustain:.0, release:.03, duration:.07 });
-    },
-
-    // 버튼 클릭
-    click() {
-      play({ type:'sine', freq:660, gain:.12, attack:.003, decay:.04, sustain:.1, release:.06, duration:.12 });
     },
   };
 })();

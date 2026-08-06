@@ -1,0 +1,33 @@
+/*
+ * 키오스크 트레이너 공통 셸 CSS — 5개 kiosk-trainer HTML에서 바이트 단위로 동일하게
+ * 반복되던 규칙만 모음. 색상/치수가 키오스크마다 다른 규칙(#tp, .tphd, .tpnm, .sw.on,
+ * .ddc, .ddt, .stn, #ptbtn, #wmbar, .wmi, .wmlb, .wmrev, .tpbtn-* 등)은 각 파일에 그대로 둔다.
+ */
+#tp.col{width:0;min-width:0;}
+.tplb{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;}
+.tpbd{flex:1;overflow-y:auto;}
+.tpbd::-webkit-scrollbar{width:3px;}
+.tpbd::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);}
+.tpsec{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07);}
+.tpst{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.tgr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px;}
+.tgi{flex:1;}.tgl{font-size:12px;font-weight:700;white-space:nowrap;}.tgs{font-size:10px;color:rgba(255,255,255,.4);}
+.sw{width:38px;height:20px;border-radius:10px;background:rgba(255,255,255,.2);border:none;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0;}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .25s;}
+.sw.on::after{transform:translateX(18px);}
+.dfr{display:flex;gap:5px;}
+.dfb{flex:1;padding:7px 0;text-align:center;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);font-size:11px;font-weight:700;cursor:pointer;color:rgba(255,255,255,.5);background:transparent;font-family:'Noto Sans KR',sans-serif;transition:all .2s;white-space:nowrap;}
+.dfb.ae{border-color:#4ade80;background:rgba(74,222,128,.2);color:#4ade80;}
+.dfb.am{border-color:#fbbf24;background:rgba(251,191,36,.2);color:#fbbf24;}
+.dfb.ah{border-color:#f87171;background:rgba(248,113,113,.2);color:#f87171;}
+.ddb{font-size:11px;color:rgba(255,255,255,.55);line-height:1.6;}.ddb b{color:rgba(255,255,255,.85);}
+.stg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.stc{background:rgba(255,255,255,.08);border-radius:8px;padding:8px 4px;text-align:center;}
+.stl{font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;}
+.tpbtn{margin:6px 14px 0;padding:10px 14px;border-radius:10px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;width:calc(100% - 28px);display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s;white-space:nowrap;}
+.tpbtn:hover{opacity:.85;}
+#kwrap{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 16px 40px;min-height:100vh;}
+.wmico{font-size:22px;flex-shrink:0;}
+.wmtx{flex:1;}
+.wmtask{font-size:14px;font-weight:700;color:white;margin-top:1px;}
+.wmtask.blr{filter:blur(5px);user-select:none;}

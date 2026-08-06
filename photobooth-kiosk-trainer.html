@@ -6,6 +6,7 @@
 <title>하루필름 키오스크 훈련</title>
 <script src="kiosk-image-save.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kiosk-trainer-shell.css">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -19,53 +20,25 @@ body{font-family:'Noto Sans KR',sans-serif;background:#1a0a14;min-height:100vh;d
 
 /* SIDEBAR */
 #tp{width:268px;min-width:268px;background:#120810;color:white;display:flex;flex-direction:column;transition:width .35s cubic-bezier(.4,0,.2,1),min-width .35s;overflow:hidden;position:sticky;top:0;height:100vh;}
-#tp.col{width:0;min-width:0;}
 .tphd{background:#0a0508;padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;}
-.tplb{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;}
 .tpnm{font-size:15px;font-weight:900;color:var(--pink);margin-top:2px;white-space:nowrap;}
-.tpbd{flex:1;overflow-y:auto;}
-.tpbd::-webkit-scrollbar{width:3px;}
-.tpbd::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);}
-.tpsec{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07);}
-.tpst{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
 .timer-lbl{font-size:12px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:8px;}
 .tpills{display:flex;gap:6px;}
 .tpill{flex:1;padding:8px 0;text-align:center;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);font-size:13px;font-weight:700;cursor:pointer;color:rgba(255,255,255,.5);background:transparent;font-family:'Noto Sans KR',sans-serif;transition:all .2s;}
 .tpill.sel{border-color:var(--pink);background:rgba(255,92,141,.2);color:var(--pink);}
-.tgr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px;}
-.tgi{flex:1;}.tgl{font-size:12px;font-weight:700;white-space:nowrap;}.tgs{font-size:10px;color:rgba(255,255,255,.4);}
-.sw{width:38px;height:20px;border-radius:10px;background:rgba(255,255,255,.2);border:none;cursor:pointer;position:relative;transition:background .25s;flex-shrink:0;}
 .sw.on{background:var(--pink);}
-.sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .25s;}
-.sw.on::after{transform:translateX(18px);}
-.dfr{display:flex;gap:5px;}
-.dfb{flex:1;padding:7px 0;text-align:center;border-radius:8px;border:1.5px solid rgba(255,255,255,.15);font-size:11px;font-weight:700;cursor:pointer;color:rgba(255,255,255,.5);background:transparent;font-family:'Noto Sans KR',sans-serif;transition:all .2s;white-space:nowrap;}
-.dfb.ae{border-color:#4ade80;background:rgba(74,222,128,.2);color:#4ade80;}
-.dfb.am{border-color:#fbbf24;background:rgba(251,191,36,.2);color:#fbbf24;}
-.dfb.ah{border-color:#f87171;background:rgba(248,113,113,.2);color:#f87171;}
 .ddc{margin-top:8px;background:rgba(255,92,141,.1);border:1px solid rgba(255,92,141,.25);border-radius:10px;padding:10px 12px;}
 .ddt{font-size:11px;font-weight:900;color:var(--pink);margin-bottom:4px;}
-.ddb{font-size:11px;color:rgba(255,255,255,.55);line-height:1.6;}.ddb b{color:rgba(255,255,255,.85);}
-.stg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.stc{background:rgba(255,255,255,.08);border-radius:8px;padding:8px 4px;text-align:center;}
 .stn{font-size:22px;font-weight:900;color:var(--pink);}
-.stl{font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;}
-.tpbtn{margin:6px 14px 0;padding:10px 14px;border-radius:10px;border:none;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;width:calc(100% - 28px);display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s;white-space:nowrap;}
-.tpbtn:hover{opacity:.85;}
 .tpbtn-pk{background:linear-gradient(135deg,#FF5C8D,#FF87AA);color:white;}
 .tpbtn-sv{background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.28);margin-top:8px;}
 #ptbtn{position:fixed;top:14px;left:14px;z-index:300;width:42px;height:42px;border-radius:11px;background:#2a0a1e;border:2px solid rgba(255,92,141,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--pink);box-shadow:0 4px 14px rgba(0,0,0,.5);transition:left .35s cubic-bezier(.4,0,.2,1);}
 #ptbtn.open{left:280px;}
 
 /* KIOSK WRAP */
-#kwrap{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 16px 40px;min-height:100vh;}
 #wmbar{width:100%;max-width:460px;margin-bottom:10px;padding-left:58px;}
 .wmi{background:linear-gradient(135deg,#2a0a1e,#4a1a35);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(255,92,141,.2);border:1px solid rgba(255,92,141,.2);}
-.wmico{font-size:22px;flex-shrink:0;}
-.wmtx{flex:1;}
 .wmlb{font-size:10px;color:rgba(255,135,170,.7);font-weight:700;text-transform:uppercase;letter-spacing:1px;}
-.wmtask{font-size:14px;font-weight:700;color:white;margin-top:1px;}
-.wmtask.blr{filter:blur(5px);user-select:none;}
 .wmrev{padding:5px 12px;border-radius:20px;background:rgba(255,92,141,.25);border:1px solid rgba(255,92,141,.4);color:var(--pink);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 #kframe{width:100%;max-width:460px;background:var(--white);border-radius:22px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.7);min-height:720px;display:flex;flex-direction:column;border:4px solid var(--pink);}
 
@@ -351,6 +324,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#1a0a14;min-height:100vh;d
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="kiosk-trainer-shell.js"></script>
 <script>
 const CONCEPTS=[
   {id:'natural',name:'내추럴',emoji:'🌿',price:5000,bg:'linear-gradient(135deg,#d4edda,#a8d8a8)',badge:'인기'},
@@ -406,8 +380,8 @@ const S={
 const CIRC=226.2;
 
 setInterval(()=>{const n=new Date();const e=document.getElementById('pbtime');if(e)e.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');},1000);
-let toastT;
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2300);}
+const _shell=createTrainerShell(S,{mhideKey:'hide',toastMs:2300,trackPanelOpen:false});
+function showToast(msg){_shell.showToast(msg);}
 
 /* ---- CANVAS ---- */
 function captureRealPhoto(videoEl){
@@ -843,15 +817,15 @@ function resetAll(){
   S.currentShot=0;S.capturedURLs=[];S.shotPoses=[];
   setMission();render();showToast('🔄 새 세션 시작!');
 }
-function togPanel(){const p=document.getElementById('tp');const b=document.getElementById('ptbtn');p.classList.toggle('col');b.classList.toggle('open',!p.classList.contains('col'));}
-function togOpt(k,el){S.opts[k]=!S.opts[k];el.classList.toggle('on');if(k==='mission')document.getElementById('wmbar').style.display=S.opts.mission?'block':'none';if(k==='hide')updateWmBar();}
-function setDiff(d,el){S.difficulty=d;document.querySelectorAll('.dfb').forEach(b=>b.className='dfb');el.className=`dfb a${d}`;document.getElementById('ddt').textContent=DIFF_INFO[d].tag;document.getElementById('ddb').innerHTML=DIFF_INFO[d].desc;setMission();}
+function togPanel(){_shell.togPanel();}
+function togOpt(k,el){_shell.togOpt(k,el);}
+function setDiff(d,el){_shell.setDiff(d,el,DIFF_INFO,setMission);}
 function setTimer(sec,el){S.timerSec=sec;document.querySelectorAll('.tpill').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');}
 const ML={e:['브이 자세로 2컷 찍어보세요!','하트 자세로 사진을 찍어보세요!','제시된 자세를 따라해 보세요!'],m:['3컷 모두 다른 자세로 찍어보세요!','손 자세를 기억하며 3컷을 찍어요!','자세를 순서대로 따라해요!'],h:['4컷 모두 정확하게 자세를 취해요!','어려운 자세 4가지 도전!','빠르게 자세를 기억하고 찍어요!']};
 function setMission(){const list=ML[S.difficulty];S.mission=list[Math.floor(Math.random()*list.length)];updateWmBar();}
-function updateWmBar(){const t=document.getElementById('wmtask');const r=document.getElementById('wmrev');if(!t)return;t.textContent=S.mission;if(S.opts.hide){t.classList.add('blr');r.style.display='block';}else{t.classList.remove('blr');r.style.display='none';}document.getElementById('wmbar').style.display=S.opts.mission?'block':'none';}
-function revealMs(){const t=document.getElementById('wmtask');const r=document.getElementById('wmrev');t.classList.remove('blr');r.style.display='none';setTimeout(()=>{if(S.opts.hide){t.classList.add('blr');r.style.display='block';}},3000);}
-function updateStats(){document.getElementById('st-t').textContent=S.stats.trials;document.getElementById('st-c').textContent=S.stats.correct;const p=S.stats.trials>0?Math.round(S.stats.correct/S.stats.trials*100):0;document.getElementById('st-p').textContent=p+'%';}
+function updateWmBar(){_shell.updateWmBar();}
+function revealMs(){_shell.revealMs();}
+function updateStats(){_shell.updateStats();}
 setMission();render();
 </script>
 </body>
