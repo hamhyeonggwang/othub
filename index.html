@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="작업치료사가 만든 모두를 위한 콘텐츠 공간. 일상생활 훈련, 인터랙티브 활동과 작업치료 자료를 OT Hub에서 만나세요.">
+  <meta name="theme-color" content="#172c2b">
+  <title>OT Hub · 일상의 가능성을 넓히다</title>
+  <link rel="stylesheet" href="assets/workspace.css">
+  <link rel="stylesheet" href="assets/homepage-preview.css">
+  <script defer src="assets/content.js"></script>
+  <script defer src="assets/releases.js"></script>
+  <script defer src="supabase-config.js"></script>
+  <script defer src="assets/services.js"></script>
+  <script defer src="assets/auth.js"></script>
+  <script defer src="assets/analytics.js"></script>
+  <script defer src="assets/community.js"></script>
+  <script defer src="assets/workspace.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 이동</a>
+  <div class="public-site">
+    <div class="notice-bar">
+      <div class="public-container notice-bar__inner">
+        <p>작업치료사가 만들고, 함께 쓰는 일상 연습 도구</p>
+        <a href="#profile">치료사 공간</a>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="public-container site-header__inner">
+        <a class="wordmark" href="#home" aria-label="OT Hub 홈으로 이동">OT Hub<span>·</span></a>
+        <nav class="site-nav" id="primaryNav" aria-label="주 메뉴">
+          <a href="#webapps" data-route="webapps">도구</a>
+          <a href="#videos" data-route="videos">자료</a>
+          <a href="#profile" data-route="profile">치료사 공간</a>
+          <a href="about.html">소개</a>
+        </nav>
+        <form class="public-search" role="search" id="searchForm">
+          <span aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" maxlength="120" autocomplete="off" placeholder="필요한 활동 찾기" aria-label="콘텐츠 검색">
+          <kbd>/</kbd>
+        </form>
+        <a class="button button--dark header-action" href="#webapps">활동 시작</a>
+        <a class="account-link" href="#profile" aria-label="내 공간 열기"><span id="accountAvatar">OT</span><span id="accountIdentity">내 공간</span></a>
+      </div>
+    </header>
+    <main id="main" class="public-main" tabindex="-1"><div id="view"></div></main>
+    <footer class="site-footer">
+      <div class="public-container site-footer__grid">
+        <div>
+          <a class="wordmark wordmark--footer" href="#home">OT Hub<span>·</span></a>
+          <p>작업치료사가 만들고, 함께 쓰는 일상 연습 도구.</p>
+        </div>
+        <nav aria-label="푸터 메뉴">
+          <a href="#webapps">도구</a>
+          <a href="#videos">자료</a>
+          <a href="#profile">치료사 공간</a>
+          <a href="about.html">소개</a>
+          <a href="#privacy">이용 데이터 안내</a>
+        </nav>
+        <small>© 2026 OT Hub · 함형광</small>
+      </div>
+    </footer>
+  </div>
+  <nav class="mobile-nav" aria-label="모바일 주 메뉴" id="mobileNav"></nav>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="communityDialog" class="community-dialog" aria-labelledby="communityTitle"><div class="community-head"><h2 id="communityTitle">콘텐츠 이야기</h2><button id="communityClose" class="button secondary" aria-label="댓글 창 닫기">닫기</button></div><p id="communityStatus" class="inline-status" role="status"></p><button id="communityLike" class="button secondary">좋아요</button><div id="communityComments"></div><form id="communityForm" class="login-form"><label for="communityBody">댓글 남기기</label><textarea id="communityBody" maxlength="2000" required placeholder="콘텐츠에 대한 의견을 남겨 주세요. 개인정보는 적지 마세요."></textarea><button class="button primary">댓글 등록</button></form><p class="fine-print">좋아요와 댓글 작성은 로그인 후 이용할 수 있습니다.</p><a href="#profile" id="communityLogin" class="text-link">내 정보에서 로그인하기 ↗</a></dialog>
+  <noscript><p>OT Hub의 콘텐츠 탐색을 이용하려면 JavaScript를 켜 주세요.</p></noscript>
+</body>
+</html>

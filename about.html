@@ -1,0 +1,227 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>만든 사람 · OT Hub</title><link rel="stylesheet" href="assets/about.css"><style>#about{display:flex}</style></head><body><div id="about">
+
+  <!-- Nav -->
+  <nav class="ab-nav">
+    <button class="ab-back" onclick="showLanding()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      돌아가기
+    </button>
+    <div class="logo">
+      <div class="logo-mark" style="width:26px;height:26px;font-size:9px;border-radius:7px;">OT</div>
+      <span class="logo-text" style="font-size:15px;">OT Hub</span>
+    </div>
+    <button class="btn btn-fill" style="font-size:12px;padding:6px 14px;" onclick="showApp()">플랫폼 입장</button>
+  </nav>
+
+  <div style="overflow-y:auto;flex:1;">
+
+    <!-- Hero -->
+    <div class="ab-hero">
+      <div class="ab-avatar">함</div>
+      <div class="ab-name">함형광</div>
+      <div class="ab-role">OT Futurist · AI × ICF × Human-Centered Design</div>
+      <div class="ab-tags" style="margin-bottom:20px;">
+        <span class="ab-tag">🩺 작업치료사 14년차</span>
+        <span class="ab-tag">🎓 강원대 석사수료</span>
+        <span class="ab-tag">🤖 AI · sLLM 연구</span>
+        <span class="ab-tag">📱 바이브코딩</span>
+      </div>
+      <div class="ab-socials">
+        <a class="ab-social" href="https://instagram.com/starlight_daddy" target="_blank" rel="noopener">
+          <div class="insta-ico"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#fff" stroke="none"/></svg></div>
+          @starlight_daddy
+        </a>
+        <a class="ab-social" href="https://brunch.co.kr/@starlight-daddy" target="_blank" rel="noopener">
+          <span style="font-size:13px;font-weight:800;color:#795548;">B</span>Brunch
+        </a>
+        <a class="ab-social" href="https://i-lab.ai.kr" target="_blank" rel="noopener">
+          <span>🔗</span>i-lab.ai.kr
+        </a>
+      </div>
+    </div>
+
+    <!-- OT Hub 소개 -->
+    <div class="ab-sec">
+      <div class="ab-sec-title">OT Hub 소개</div>
+      <div style="background:linear-gradient(135deg,rgba(26,43,76,.03),rgba(45,212,191,.06));border:1px solid rgba(45,212,191,.18);border-radius:18px;padding:20px 22px;">
+        <div style="font-size:22px;font-weight:700;font-family:var(--display);color:var(--navy);margin-bottom:10px;">OT Hub</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 0;color:var(--gray);width:80px;font-weight:600;">목적</td>
+            <td style="padding:10px 0;color:var(--navy);">임상 현장의 작업치료사가 직접 설계한 콘텐츠·도구·게임 통합 플랫폼</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 0;color:var(--gray);font-weight:600;">대상</td>
+            <td style="padding:10px 0;color:var(--navy);">작업치료사, OT 학생, 아동·환자, 보호자</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 0;color:var(--gray);font-weight:600;">기술</td>
+            <td style="padding:10px 0;color:var(--navy);">Next.js · Supabase · AI · ICF · 바이브코딩</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;color:var(--gray);font-weight:600;">슬로건</td>
+            <td style="padding:10px 0;font-weight:700;color:var(--teal-d);">By OTs, For Everyone.</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- 운영자 정보 아코디언 -->
+    <div class="ab-sec">
+      <button class="ab-accordion-btn" onclick="toggleAccordion(this)" aria-expanded="false">
+        <span>운영자 정보</span>
+        <svg class="acc-arrow" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div class="ab-accordion-body" style="display:none;">
+
+        <!-- 주요 프로젝트 -->
+        <div class="ab-accordion-sec">
+          <div class="ab-accordion-sec-title">주요 프로젝트</div>
+          <div class="ab-proj-grid" style="grid-template-columns:1fr 1fr 1fr;">
+            <a class="ab-proj" href="https://purme.vercel.app/" target="_blank" rel="noopener">
+              <div class="ab-proj-color" style="background:linear-gradient(135deg,#7C3AED,#A78BFA);">🧠</div>
+              <div class="ab-proj-body">
+                <div class="ab-proj-name">Link IT</div>
+                <div class="ab-proj-desc">디지털 인지재활 플랫폼 (개발중)</div>
+                <div class="ab-proj-chips"><span class="ab-proj-chip">AI</span><span class="ab-proj-chip">인지재활</span></div>
+              </div>
+            </a>
+            <a class="ab-proj" href="https://assess-beige.vercel.app/" target="_blank" rel="noopener">
+              <div class="ab-proj-color" style="background:linear-gradient(135deg,#059669,#34D399);">📋</div>
+              <div class="ab-proj-body">
+                <div class="ab-proj-name">OT Assess Tool Box</div>
+                <div class="ab-proj-desc">작업치료 평가 디지털 플랫폼</div>
+                <div class="ab-proj-chips"><span class="ab-proj-chip">평가</span><span class="ab-proj-chip">임상</span></div>
+              </div>
+            </a>
+            <a class="ab-proj" href="http://ksotcs.kr" target="_blank" rel="noopener">
+              <div class="ab-proj-color" style="background:linear-gradient(135deg,#0284C7,#38BDF8);">🏛️</div>
+              <div class="ab-proj-body">
+                <div class="ab-proj-name">대한아동학교작업치료학회 사이트</div>
+                <div class="ab-proj-desc">대한아동·학교작업치료학회</div>
+                <div class="ab-proj-chips"><span class="ab-proj-chip">Web</span><span class="ab-proj-chip">학회</span></div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 학력 -->
+        <div class="ab-accordion-sec">
+          <div class="ab-accordion-sec-title">학력</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(26,43,76,.07);">
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 16px;color:var(--gray);font-weight:600;width:100px;vertical-align:top;">강원대학교</td>
+              <td style="padding:14px 16px;color:var(--navy);">일반대학원 작업치료학과 석사수료<br><span style="font-size:12px;color:var(--teal-d);">ICF 기반 임상 언어 데이터의 기능분류 및 sLLM 개발 연구</span></td>
+              <td style="padding:14px 16px;color:var(--gray);font-size:12px;white-space:nowrap;vertical-align:top;">재학 중</td>
+            </tr>
+            <tr>
+              <td style="padding:14px 16px;color:var(--gray);font-weight:600;vertical-align:top;">건양대학교</td>
+              <td style="padding:14px 16px;color:var(--navy);">작업치료학과</td>
+              <td style="padding:14px 16px;color:var(--gray);font-size:12px;white-space:nowrap;vertical-align:top;">졸업</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- 임상경력 -->
+        <div class="ab-accordion-sec">
+          <div class="ab-accordion-sec-title">임상경력 · 14년차</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(26,43,76,.07);">
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 16px;vertical-align:top;">
+                <div style="font-weight:700;color:var(--navy);margin-bottom:3px;">푸르메재단 넥슨어린이재활병원</div>
+                <div style="font-size:12px;color:var(--gray);">학령기치료팀장 · 다학제팀 리드</div>
+              </td>
+              <td style="padding:14px 16px;text-align:right;vertical-align:top;white-space:nowrap;">
+                <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(45,212,191,.13);color:var(--teal-d);">현직</span>
+              </td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 16px;vertical-align:top;">
+                <div style="font-weight:700;color:var(--navy);margin-bottom:3px;">국민건강보험공단 일산병원</div>
+                <div style="font-size:12px;color:var(--gray);">소아작업치료팀</div>
+              </td>
+              <td style="padding:14px 16px;text-align:right;vertical-align:top;">
+                <span style="font-size:11px;font-weight:600;color:rgba(26,43,76,.4);">전직</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:14px 16px;vertical-align:top;">
+                <div style="font-weight:700;color:var(--navy);margin-bottom:3px;">신촌 연세의료원 재활병원</div>
+                <div style="font-size:12px;color:var(--gray);">소아작업치료팀</div>
+              </td>
+              <td style="padding:14px 16px;text-align:right;vertical-align:top;">
+                <span style="font-size:11px;font-weight:600;color:rgba(26,43,76,.4);">전직</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- 협회·학회 -->
+        <div class="ab-accordion-sec">
+          <div class="ab-accordion-sec-title">협회 / 학회 활동</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(26,43,76,.07);">
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:13px 16px;font-weight:600;color:var(--navy);">대한작업치료사협회 서울지부</td>
+              <td style="padding:13px 16px;color:var(--gray);text-align:right;font-size:12px;">홍보이사</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:13px 16px;font-weight:600;color:var(--navy);">대한아동·학교작업치료학회</td>
+              <td style="padding:13px 16px;color:var(--gray);text-align:right;font-size:12px;">임상이사</td>
+            </tr>
+            <tr>
+              <td style="padding:13px 16px;font-weight:600;color:var(--navy);">대한작업치료학회</td>
+              <td style="padding:13px 16px;color:var(--gray);text-align:right;font-size:12px;">홍보이사</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- 저서 -->
+        <div class="ab-accordion-sec">
+          <div class="ab-accordion-sec-title">저서</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(26,43,76,.07);">
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 16px;vertical-align:middle;">
+                <div style="font-weight:700;color:var(--navy);margin-bottom:3px;">나의 작업치료, 당신의 작업</div>
+                <div style="font-size:12px;color:var(--gray);">공저 · 2025</div>
+              </td>
+              <td style="padding:14px 16px;text-align:right;vertical-align:middle;">
+                <a href="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=282033239" target="_blank" rel="noopener" style="font-size:12px;font-weight:600;color:var(--teal-d);text-decoration:none;">보기 →</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:14px 16px;vertical-align:middle;">
+                <div style="font-weight:700;color:var(--navy);margin-bottom:3px;">감각통합 – 감각처리장애와 중재</div>
+                <div style="font-size:12px;color:var(--gray);">편집위원 · 2025</div>
+              </td>
+              <td style="padding:14px 16px;text-align:right;vertical-align:middle;">
+                <a href="https://www.nrbooks.kr/goods/search_result.php?search_key=%EA%B0%80%EA%B0%81%ED%86%B5%ED%95%A9" target="_blank" rel="noopener" style="font-size:12px;font-weight:600;color:var(--teal-d);text-decoration:none;">보기 →</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- 수상 -->
+        <div class="ab-accordion-sec" style="margin-bottom:0;">
+          <div class="ab-accordion-sec-title">수상내역</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(26,43,76,.07);">
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:13px 16px;font-weight:600;color:var(--navy);">대한작업치료사협회 협회장 표창</td>
+              <td style="padding:13px 16px;color:var(--gray);text-align:right;font-size:12px;">2013</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:13px 16px;font-weight:600;color:var(--navy);">대한작업치료사협회 서울지회장 표창</td>
+              <td style="padding:13px 16px;color:var(--gray);text-align:right;font-size:12px;">2020</td>
+            </tr>
+            <tr>
+              <td style="padding:13px 16px;font-weight:600;color:var(--navy);">서울시 의료기사총연합회 회장 표창</td>
+              <td style="padding:13px 16px;color:var(--gray);text-align:right;font-size:12px;">2023</td>
+            </tr>
+          </table>
+        </div>
+
+      </div><!-- end accordion-body -->
+    </div>
+
+            <div class="ab-bottom"></div>
+  </div>
+</div><script>function showLanding(){location.href="/"}function showApp(){location.href="/"}function toggleAccordion(btn){const body=btn.nextElementSibling;const open=btn.getAttribute("aria-expanded")==="true";btn.setAttribute("aria-expanded",!open);body.style.display=open?"none":"block"}</script></body></html>

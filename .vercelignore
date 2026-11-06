@@ -1,0 +1,14 @@
+.git
+node_modules
+tests
+test-results
+playwright-report
+docs
+supabase
+scripts
+*.zip
+.DS_Store
+.github
+.env
+.env.*
+ops

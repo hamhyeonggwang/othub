@@ -125,7 +125,7 @@
       .order('created_at', { ascending: false })
       .limit(50)
       .then(function (res) {
-        if (res.error) return [];
+        if (res.error) throw res.error;
         return res.data || [];
       });
   }
@@ -434,6 +434,11 @@
   }
 
   window.OTHubEngagement = {
+    useClient: function (client) { _client = client; },
+    fetchComments: fetchComments,
+    postComment: postComment,
+    toggleLike: toggleLike,
+    supports: function (id) { return !!resolveContentId(id); },
     attachStrip: bindStrip,
     refreshStripCounts: refreshStripCounts,
     getSession: getSession,

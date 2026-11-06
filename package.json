@@ -1,0 +1,16 @@
+{
+  "name": "othub-workspace",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {
+    "dev": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "check": "node scripts/check.mjs",
+    "test": "node tests/browser.mjs",
+    "test:db": "node tests/database.mjs",
+    "test:server": "node --test tests/intake.mjs",
+    "test:auth": "node tests/auth-browser.mjs",
+    "readiness": "node scripts/readiness.mjs",
+    "status:remote": "node scripts/remote-status.mjs"
+  },
+  "devDependencies": { "playwright": "1.61.1", "@electric-sql/pglite": "0.3.14" }
+}

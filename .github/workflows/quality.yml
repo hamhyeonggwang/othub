@@ -1,0 +1,34 @@
+name: Workspace quality
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm run test:db
+      - run: npm run test:server
+      - run: npx playwright install --with-deps chromium
+      - name: Browser verification
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/index.html >/dev/null; then break; fi
+            sleep 1
+          done
+          npm test
+          npm run test:auth
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workspace-verification
+          path: test-results/
+          retention-days: 14

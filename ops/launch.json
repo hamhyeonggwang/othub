@@ -1,0 +1,8 @@
+{
+  "productionOrigin": "https://www.othub.kr",
+  "entryOrigin": "https://othub.kr",
+  "allowedOrigins": ["https://othub.kr", "https://www.othub.kr"],
+  "adminEmail": "h2g0614@gmail.com",
+  "analyticsEnabled": false,
+  "releaseState": "staging-required"
+}

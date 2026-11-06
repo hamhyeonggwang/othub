@@ -1,0 +1,21 @@
+{
+  "scanned": "2026-11-07",
+  "findings": {
+    "fonts": "Existing Inter, Pretendard, Apple SD Gothic Neo, Noto Sans KR system stack in assets/workspace.css",
+    "palette": "Existing dark green, paper, mint token family in assets/workspace.css",
+    "motion": "CSS transitions and prefers-reduced-motion; no motion library",
+    "spacing": "Existing handcrafted spacing in assets/workspace.css",
+    "framework": "Static HTML, CSS and JavaScript served by Python http.server"
+  },
+  "preserve": [
+    "Existing public content and local training routes",
+    "Existing search, bookmarks, recent activity, auth and community wiring",
+    "Mobile navigation and accessibility affordances"
+  ],
+  "introduce": [
+    "Public catalog information architecture",
+    "Ink catalogue direction with real training screens",
+    "Audience-aware homepage entry points",
+    "Content metadata for purpose, equipment and context"
+  ]
+}
